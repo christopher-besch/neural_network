@@ -1,15 +1,12 @@
-#include <armadillo>
+#include "network.h"
+#include "pch.h"
 #include <iostream>
-
-using namespace std;
-using namespace arma;
 
 int main()
 {
-    mat A(4, 5, fill::randu);
-    mat B(4, 5, fill::randu);
-
-    cout << A * B.t() << endl;
-
+    Network    net = Network({ 3, 3, 3 });
+    arma::fvec a   = { 1, 2, 3 };
+    net.feedforward(a);
+    std::cout << a << std::endl;
     return 0;
 }

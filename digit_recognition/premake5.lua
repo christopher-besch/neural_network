@@ -4,6 +4,11 @@ project "digit_recognition"
     cppdialect "C++17"
     kind "ConsoleApp"
 
+    -- like in #include
+    pchheader "pch.h"
+    -- relative path
+    pchsource "src/pch.cpp"
+
     location ""
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
