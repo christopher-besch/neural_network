@@ -1,0 +1,6 @@
+[submodule "utils"]
+	path = utils
+	url = https://github.com/christopher-besch/cpp_utils.git
+[submodule "vendor/armadillo"]
+	path = vendor/armadillo
+	url = https://github.com/christopher-besch/armadillo_fork.git
