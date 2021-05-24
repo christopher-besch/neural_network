@@ -12,26 +12,7 @@ private:
 
 public:
     // sizes of layers, first is input, last is output
-    Network(const std::vector<size_t>& sizes)
-    {
-        m_num_layers = sizes.size();
-        m_sizes      = sizes;
-
-        // one for each layer except input layer
-        m_biases.reserve(m_num_layers - 1);
-        for (size_t layer_idx = 1; layer_idx < m_num_layers; ++layer_idx)
-        {
-            m_biases.emplace_back(m_sizes[layer_idx], 1, arma::fill::randn);
-        }
-
-        // one for each space between layers
-        m_weights.reserve(m_num_layers - 1);
-        for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
-        {
-            // from next layer to current layer
-            m_weights.emplace_back(m_sizes[left_layer_idx + 1], m_sizes[left_layer_idx], arma::fill::randn);
-        }
-    }
+    Network(const std::vector<size_t>& sizes);
 
     // vectorized
     arma::fvec sigmoid(const arma::fvec& z)
@@ -42,46 +23,21 @@ public:
     // return output of network with input a
     // input is vector as matrix
     // a gets changed
-    arma::fmat& feedforward(arma::fmat& a)
-    {
-        // loop over each layer
-        for (size_t right_layer_idx = 0; right_layer_idx < m_num_layers - 1; ++right_layer_idx)
-        {
-            // only care about first column
-            a = sigmoid(m_weights[right_layer_idx] * a + m_biases[right_layer_idx]);
-        }
-        return a;
-    }
+    arma::fmat& feedforward(arma::fmat& a);
 
     // stochastic gradient descent
     // eta = learning rate
-    void sgd(const std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
+    void sgd(std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
              size_t epochs, size_t mini_batch_size, float eta,
-             const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data = {})
-    {
-        size_t n      = training_data.size();
-        size_t n_test = test_data.size();
+             const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data = {});
 
-        for (size_t e; e < epochs; ++e)
-        {
-            std::shuffle(training_data.begin(), training_data.end(), std::mt19937);
-        }
-    }
+    // update weights and biases
+    void update_mini_batch(const std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
+                           size_t offset, size_t length, size_t eta);
 
-    std::string to_string()
-    {
-        std::stringstream buffer;
-        buffer << "<Network: sizes: ";
-        for (size_t size : m_sizes)
-            buffer << size << " ";
-        buffer << std::endl
-               << "biases:" << std::endl;
-        for (const arma::fmat& bias : m_biases)
-            buffer << bias << std::endl;
-        buffer << "weights:" << std::endl;
-        for (const arma::fmat& weight : m_weights)
-            buffer << weight << std::endl;
-        buffer << ">";
-        return buffer.str();
-    }
+    float evaluate(const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data);
+
+    void backprop(const arma::fvec& x, const arma::fvec& y, std::vector<arma::fmat>& delta_nabla_b, std::vector<arma::fmat>& delta_nabla_w);
+
+    std::string to_string();
 };
