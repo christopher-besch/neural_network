@@ -1,3 +1,5 @@
+#include "pch.h"
+
 #include "network.h"
 
 Network::Network(const std::vector<size_t>& sizes)
@@ -39,7 +41,7 @@ void Network::sgd(std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
     size_t n_test = test_data.size();
     size_t n      = training_data.size();
 
-    for (size_t e; e < epochs; ++e)
+    for (size_t e = 0; e < epochs; ++e)
     {
         // todo: make fast with threading
         std::shuffle(training_data.begin(), training_data.end(), std::mt19937_64 {});
@@ -100,6 +102,10 @@ void Network::update_mini_batch(const std::vector<std::pair<arma::fvec, arma::fv
 }
 
 float Network::evaluate(const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data)
+{
+}
+
+void Network::backprop(const arma::fvec& x, const arma::fvec& y, std::vector<arma::fmat>& delta_nabla_b, std::vector<arma::fmat>& delta_nabla_w)
 {
 }
 
