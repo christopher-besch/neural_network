@@ -4,4 +4,6 @@ IFS=$' \n\t'
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 make config=debug -j12
-bin/Debug-linux-x86_64/digit_recognition/digit_recognition
+./check
+echo "==== build done ===="
+bin/Debug-linux-x86_64/digit_recognition/digit_recognition data

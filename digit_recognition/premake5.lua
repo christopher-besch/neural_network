@@ -4,6 +4,8 @@ project "digit_recognition"
     cppdialect "C++17"
     kind "ConsoleApp"
 
+    warnings "Default"
+
     -- like in #include
     pchheader "pch.h"
     -- relative path
@@ -21,7 +23,7 @@ project "digit_recognition"
     -- for #include with ""
     includedirs {
         "src",
-        "utils/src"
+        "%{wks.location}/utils/src"
     }
 
     -- for #include with <>
