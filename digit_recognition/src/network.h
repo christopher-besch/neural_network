@@ -35,7 +35,7 @@ public:
                            size_t offset, size_t length, float eta);
 
     // adjust nabla_b and nabla_w according to delta_nabla_b and delta_nabla_w representing gradient of cost function
-    // layer-by-layer, analog to m_biases and m_weights
+    // layer-by-layer, congruent to m_biases and m_weights
     void backprop(const arma::fvec& x, const arma::fvec& y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w);
 
     // return number of correct results of neural network

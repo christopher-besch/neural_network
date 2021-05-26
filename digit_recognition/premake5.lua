@@ -4,7 +4,7 @@ project "digit_recognition"
     cppdialect "C++17"
     kind "ConsoleApp"
 
-    warnings "Default"
+    warnings "Extra"
 
     -- like in #include
     pchheader "pch.h"

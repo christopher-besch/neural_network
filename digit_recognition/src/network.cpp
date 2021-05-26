@@ -2,8 +2,13 @@
 
 #include "network.h"
 
+#include <random>
+
 Network::Network(const std::vector<size_t>& sizes)
 {
+    // todo: make multi threaded
+    arma::arma_rng::set_seed_random();
+
     m_num_layers = sizes.size();
     m_sizes      = sizes;
 
@@ -110,6 +115,7 @@ void Network::backprop(const arma::fvec& x, const arma::fvec& y, std::vector<arm
     zs.reserve(m_num_layers - 1);
     for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
     {
+        // weighted input
         //                                             <- actually right layer
         arma::fvec z = m_weights[left_layer_idx] * a + m_biases[left_layer_idx];
         zs.push_back(z);
@@ -149,7 +155,7 @@ size_t Network::evaluate(const std::vector<std::pair<arma::fvec, arma::fvec>>& t
         size_t selected_number    = -1;
         bool   got_first_selected = false;
 
-        for (int idx = 0; idx < a.n_rows; ++idx)
+        for (size_t idx = 0; idx < a.n_rows; ++idx)
         {
             if (!got_first_correct || y[idx] > highest_correct_confidence)
             {

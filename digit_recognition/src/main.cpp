@@ -9,7 +9,7 @@
 int main(int argc, const char* argv[])
 {
     if (argc < 2)
-        raise_error("Please specify path to data as the first parameter.");
+        raise_error("Please specify the path to the data as the first parameter.");
     // load data
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
