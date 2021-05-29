@@ -102,23 +102,25 @@ void Network::update_mini_batch(const std::vector<std::pair<arma::fvec, arma::fv
     }
 }
 
-void Network::backprop(const arma::fvec& x, const arma::fvec& y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w)
+void Network::backprop(const arma::fmat& x, const arma::fmat& y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w)
 {
     // activations layer by layer <- needed for backprop algorithm
     // one per layer
-    std::vector<arma::fvec> activations { x };
+    std::vector<arma::fmat> activations { x };
     activations.reserve(m_num_layers);
     // list of inputs for sigmoid function
     // one for each layer, except input
-    std::vector<arma::fvec> zs;
+    std::vector<arma::fmat> zs;
     zs.reserve(m_num_layers - 1);
 
     // feedforward
     for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
     {
+        // extend biases with as many copied columns as there are data sets in the batch
+        //                               <- actually right layer
+        arma::fmat biases_mat = m_biases[left_layer_idx] * arma::fmat(1, x.n_cols, arma::fill::ones);
         // weighted input
-        //                                                                                <- actually right layer
-        zs.emplace_back(m_weights[left_layer_idx] * activations[activations.size() - 1] + m_biases[left_layer_idx]);
+        zs.emplace_back(m_weights[left_layer_idx] * activations[activations.size() - 1] + biases_mat);
         activations.emplace_back(sigmoid(zs[zs.size() - 1]));
     }
 

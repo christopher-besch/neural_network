@@ -37,14 +37,14 @@ public:
 
     // adjust nabla_b and nabla_w according to delta_nabla_b and delta_nabla_w representing gradient of cost function
     // layer-by-layer, congruent to m_biases and m_weights
-    void backprop(const arma::fvec& x, const arma::fvec& y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w);
+    void backprop(const arma::fmat& x, const arma::fmat& y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w);
 
     // return number of correct results of neural network
     // neuron in final layer with highest activation determines result
     size_t evaluate(const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data);
 
     // return vector of partial derivatives \partial C_x / \partial a
-    arma::fvec cost_derivative(const arma::fvec& output_activations, const arma::fvec& y)
+    arma::fmat cost_derivative(const arma::fmat& output_activations, const arma::fmat& y)
     {
         return output_activations - y;
     }
