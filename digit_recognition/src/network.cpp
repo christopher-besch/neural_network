@@ -54,6 +54,7 @@ void Network::sgd(std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
 
         for (size_t offset = 0; offset < n; offset += mini_batch_size)
         {
+            // make last batch smaller if necessary
             size_t length = offset + mini_batch_size >= n ? n - offset : mini_batch_size;
             update_mini_batch(training_data, offset, length, eta);
         }
@@ -68,17 +69,18 @@ void Network::sgd(std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
 void Network::update_mini_batch(const std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
                                 size_t offset, size_t length, float eta)
 {
-    // sums of gradients
-    // start at all 0
+    // sums of gradients <- how do certain weights and biases change the cost
+    // layer wise
     std::vector<arma::fvec> nabla_b(m_biases.size());
     std::vector<arma::fmat> nabla_w(m_weights.size());
+    // start at all 0
     for (size_t i = 0; i < nabla_b.size(); ++i)
     {
         nabla_b[i] = arma::fvec(m_biases[i].n_rows, arma::fill::zeros);
         nabla_w[i] = arma::fmat(m_weights[i].n_rows, m_weights[i].n_cols, arma::fill::zeros);
     }
 
-    // loop ever all training sets in mini batch
+    // loop over all training sets in mini batch
     for (size_t idx = offset; idx < offset + length; ++idx)
     {
         // x: input
@@ -86,7 +88,7 @@ void Network::update_mini_batch(const std::vector<std::pair<arma::fvec, arma::fv
         auto& [x, y] = training_data[idx];
 
         // use backprop to calculate gradient
-        // de-/in-crease delta
+        // de-/increase delta
         backprop(x, y, nabla_b, nabla_w);
     }
 
@@ -100,42 +102,46 @@ void Network::update_mini_batch(const std::vector<std::pair<arma::fvec, arma::fv
     }
 }
 
-// todo: understand this!
 void Network::backprop(const arma::fvec& x, const arma::fvec& y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w)
 {
-    // feedforward
-    arma::fvec a = x;
-    // activations layer by layer
+    // activations layer by layer <- needed for backprop algorithm
     // one per layer
-    std::vector<arma::fvec> activations { a };
+    std::vector<arma::fvec> activations { x };
     activations.reserve(m_num_layers);
     // list of inputs for sigmoid function
     // one for each layer, except input
     std::vector<arma::fvec> zs;
     zs.reserve(m_num_layers - 1);
+
+    // feedforward
     for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
     {
         // weighted input
-        //                                             <- actually right layer
-        arma::fvec z = m_weights[left_layer_idx] * a + m_biases[left_layer_idx];
-        zs.push_back(z);
-        a = sigmoid(z);
-        activations.push_back(a);
+        //                                                                                <- actually right layer
+        zs.emplace_back(m_weights[left_layer_idx] * activations[activations.size() - 1] + m_biases[left_layer_idx]);
+        activations.emplace_back(sigmoid(zs[zs.size() - 1]));
     }
-    // backward pass
-    arma::fvec delta = cost_derivative(activations[activations.size() - 1], y) % sigmoid_prime(zs[zs.size() - 1]);
-    nabla_b[nabla_b.size() - 1] += delta;
-    nabla_w[nabla_w.size() - 1] += delta * activations[activations.size() - 2].t();
+
+    // calculate error for last layer (BP1)
+    arma::fvec error = cost_derivative(activations[activations.size() - 1], y) % sigmoid_prime(zs[zs.size() - 1]);
+    // get gradient with respect to biases (BP3)
+    nabla_b[nabla_b.size() - 1] += error;
+    // get gradient with respect to weights (BP4)
+    nabla_w[nabla_w.size() - 1] += error * activations[activations.size() - 2].t();
+
+    // for all other layers
     // start at penultimate element of zs and go back to first
     for (int64_t layer_idx = m_num_layers - 3; layer_idx >= 0; --layer_idx)
     {
-        arma::fvec z  = zs[layer_idx];
-        arma::fvec sp = sigmoid_prime(z);
-        delta         = (m_weights[layer_idx + 1].t() * delta) % sp;
+        // get input for sigmoid function of current layer
+        arma::fvec sp = sigmoid_prime(zs[layer_idx]);
+        // calculate error for current layer with error from layer to the right (BP2)
+        error = (m_weights[layer_idx + 1].t() * error) % sp;
 
-        nabla_b[layer_idx] += delta;
+        // update gradient like with last layer
+        nabla_b[layer_idx] += error;
         // activations is one longer than zs
-        nabla_w[layer_idx] += delta * activations[layer_idx].t();
+        nabla_w[layer_idx] += error * activations[layer_idx].t();
     }
 }
 

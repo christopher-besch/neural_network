@@ -26,6 +26,7 @@ public:
 
     // stochastic gradient descent
     // eta = learning rate
+    // if test_data given evaluate network after each epoch -> slow
     void sgd(std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
              size_t epochs, size_t mini_batch_size, float eta,
              const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data = {});
