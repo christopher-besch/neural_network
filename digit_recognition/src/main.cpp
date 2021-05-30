@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "network.h"
+// #include "network.h"
 #include "read_mnist.h"
 #include "utils.h"
 
@@ -14,17 +14,15 @@ int main(int argc, const char* argv[])
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
 
-    std::vector<std::pair<arma::fvec, arma::fvec>> training_data;
-    load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"), training_data);
-    std::vector<std::pair<arma::fvec, arma::fvec>> test_data;
-    load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"), test_data);
+    Data training_data = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
+    Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
 
 #if 0
     for (int x = 0; x < 28; ++x)
     {
         for (int y = 0; y < 28; ++y)
         {
-            float pixel = training_data[50].first[28 * y + x];
+            float pixel = training_data.x.at(28 * y + x, 59999);
             std::cout << (pixel > 0.5f ? '#' : ' ');
         }
         std::cout << std::endl;
@@ -32,8 +30,8 @@ int main(int argc, const char* argv[])
 #endif
 
     // learn network
-    Network net = Network({ 784, 30, 10 });
-    net.sgd(training_data, 30, 10, 3.0f, test_data);
+    // Network net = Network({ 784, 30, 10 });
+    // net.sgd(training_data, 30, 10, 3.0f, test_data);
 
     return 0;
 }

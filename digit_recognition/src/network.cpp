@@ -33,23 +33,27 @@ arma::fmat Network::feedforward(arma::fmat a)
     // loop over each layer
     for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
     {
+        arma::fmat biases_mat = m_biases[left_layer_idx] * arma::fmat(1, a.n_cols, arma::fill::ones);
         // only care about first column
         //                                          <- actually of right layer
-        a = sigmoid(m_weights[left_layer_idx] * a + m_biases[left_layer_idx]);
+        a = sigmoid(m_weights[left_layer_idx] * a + biases_mat);
     }
     return a;
 }
 
-void Network::sgd(std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
-                  size_t epochs, size_t mini_batch_size, float eta,
-                  const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data)
+void Network::sgd(const Data& training_data,
+                  size_t      epochs,
+                  size_t      mini_batch_size,
+                  float       eta,
+                  const Data& test_data)
 {
-    size_t n_test = test_data.size();
-    size_t n      = training_data.size();
+    size_t n_test = test_data.x.n_cols;
+    size_t n      = training_data.x.n_cols;
 
     for (size_t e = 0; e < epochs; ++e)
     {
         // todo: make fast with threading
+
         std::shuffle(training_data.begin(), training_data.end(), std::mt19937_64 {});
 
         for (size_t offset = 0; offset < n; offset += mini_batch_size)
@@ -125,11 +129,12 @@ void Network::backprop(const arma::fmat& x, const arma::fmat& y, std::vector<arm
     }
 
     // calculate error for last layer (BP1)
-    arma::fvec error = cost_derivative(activations[activations.size() - 1], y) % sigmoid_prime(zs[zs.size() - 1]);
+    arma::fmat error = cost_derivative(activations[activations.size() - 1], y) % sigmoid_prime(zs[zs.size() - 1]);
+    // sum errors from each data set together -> sum rows into single column
     // get gradient with respect to biases (BP3)
-    nabla_b[nabla_b.size() - 1] += error;
+    nabla_b[nabla_b.size() - 1] += arma::sum(error, 1);
     // get gradient with respect to weights (BP4)
-    nabla_w[nabla_w.size() - 1] += error * activations[activations.size() - 2].t();
+    nabla_w[nabla_w.size() - 1] += arma::sum(error, 1) * activations[activations.size() - 2].t();
 
     // for all other layers
     // start at penultimate element of zs and go back to first
@@ -141,9 +146,9 @@ void Network::backprop(const arma::fmat& x, const arma::fmat& y, std::vector<arm
         error = (m_weights[layer_idx + 1].t() * error) % sp;
 
         // update gradient like with last layer
-        nabla_b[layer_idx] += error;
+        nabla_b[layer_idx] += arma::sum(error, 1);
         // activations is one longer than zs
-        nabla_w[layer_idx] += error * activations[layer_idx].t();
+        nabla_w[layer_idx] += arma::sum(error, 1) * activations[layer_idx].t();
     }
 }
 

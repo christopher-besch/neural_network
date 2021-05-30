@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "read_mnist.h"
 
 class Network
 {
@@ -27,13 +28,14 @@ public:
     // stochastic gradient descent
     // eta = learning rate
     // if test_data given evaluate network after each epoch -> slow
-    void sgd(std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
-             size_t epochs, size_t mini_batch_size, float eta,
-             const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data = {});
+    void sgd(const Data& training_data,
+             size_t      epochs,
+             size_t      mini_batch_size,
+             float       eta,
+             const Data& test_data = {});
 
     // update weights and biases
-    void update_mini_batch(const std::vector<std::pair<arma::fvec, arma::fvec>>& training_data,
-                           size_t offset, size_t length, float eta);
+    void update_mini_batch(const arma::fmat& x, const arma::fmat& y, float eta);
 
     // adjust nabla_b and nabla_w according to delta_nabla_b and delta_nabla_w representing gradient of cost function
     // layer-by-layer, congruent to m_biases and m_weights
@@ -41,7 +43,7 @@ public:
 
     // return number of correct results of neural network
     // neuron in final layer with highest activation determines result
-    size_t evaluate(const std::vector<std::pair<arma::fvec, arma::fvec>>& test_data);
+    size_t evaluate(const Data& test_data);
 
     // return vector of partial derivatives \partial C_x / \partial a
     arma::fmat cost_derivative(const arma::fmat& output_activations, const arma::fmat& y)
@@ -50,12 +52,12 @@ public:
     }
 
     // vectorized
-    arma::fvec sigmoid(const arma::fvec& z)
+    arma::fmat sigmoid(const arma::fmat& z)
     {
         return 1.0 / (1.0 + arma::exp(-z));
     }
     // derivative of sigmoid function
-    arma::fvec sigmoid_prime(const arma::fvec& z)
+    arma::fmat sigmoid_prime(const arma::fmat& z)
     {
         return sigmoid(z) % (1 - sigmoid(z));
     }
