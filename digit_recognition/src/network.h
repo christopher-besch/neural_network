@@ -28,35 +28,38 @@ public:
     // stochastic gradient descent
     // eta = learning rate
     // if test_data given evaluate network after each epoch -> slow
-    void sgd(const Data& training_data,
+    void sgd(const Data* training_data,
              size_t      epochs,
              size_t      mini_batch_size,
              float       eta,
-             const Data& test_data = {});
+             const Data* test_data = nullptr);
 
     // update weights and biases
-    void update_mini_batch(const arma::fmat& x, const arma::fmat& y, float eta);
+    void update_mini_batch(const arma::subview<float> x, const arma::subview<float> y, float eta);
 
-    // adjust nabla_b and nabla_w according to delta_nabla_b and delta_nabla_w representing gradient of cost function
+    // set nabla_b and nabla_w to sum of delta_nabla_b and delta_nabla_w representing gradient of cost function for all data sets in batch
     // layer-by-layer, congruent to m_biases and m_weights
-    void backprop(const arma::fmat& x, const arma::fmat& y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w);
+    void backprop(const arma::subview<float> x, const arma::subview<float> y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w);
 
     // return number of correct results of neural network
     // neuron in final layer with highest activation determines result
-    size_t evaluate(const Data& test_data);
+    size_t evaluate(const Data* test_data);
 
     // return vector of partial derivatives \partial C_x / \partial a
+    // one column per data set
     arma::fmat cost_derivative(const arma::fmat& output_activations, const arma::fmat& y)
     {
         return output_activations - y;
     }
 
     // vectorized
+    // one column per data set
     arma::fmat sigmoid(const arma::fmat& z)
     {
         return 1.0 / (1.0 + arma::exp(-z));
     }
     // derivative of sigmoid function
+    // one column per data set
     arma::fmat sigmoid_prime(const arma::fmat& z)
     {
         return sigmoid(z) % (1 - sigmoid(z));
