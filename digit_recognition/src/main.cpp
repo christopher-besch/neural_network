@@ -29,6 +29,18 @@ int main(int argc, const char* argv[])
         std::cout << std::endl;
     }
     std::cout << training_data.get_y().col(idx) << std::endl;
+
+    Data new_data = training_data.get_shuffled();
+    for (int y = 0; y < 28; ++y)
+    {
+        for (int x = 0; x < 28; ++x)
+        {
+            float pixel = new_data.get_x().at(28 * y + x, idx);
+            std::cout << (pixel > 0.5f ? '#' : ' ');
+        }
+        std::cout << std::endl;
+    }
+    std::cout << new_data.get_y().col(idx) << std::endl;
 #endif
 
     // learn network
