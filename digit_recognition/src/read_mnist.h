@@ -30,20 +30,6 @@ public:
         m_y = m_data.rows(x_size, x_size + y_size - 1);
     }
 
-    Data(Data&& other)
-        : m_data(std::move(other.m_data)), m_x_size(other.m_x_size), m_y_size(other.m_y_size), m_x(other.m_x), m_y(other.m_y) {}
-
-    Data& operator=(Data&& other)
-    {
-        m_data   = std::move(other.m_data);
-        m_x_size = other.m_x_size;
-        m_y_size = other.m_y_size;
-        m_x      = other.m_x;
-        m_y      = other.m_y;
-
-        return *this;
-    }
-
     // input
     const arma::fmat& get_x() const
     {
@@ -56,11 +42,11 @@ public:
     // desired output
     const arma::fmat& get_y() const
     {
-        return m_x;
+        return m_y;
     }
     arma::fmat& get_y()
     {
-        return m_x;
+        return m_y;
     }
 
     Data get_shuffled()
@@ -68,7 +54,6 @@ public:
         return Data(arma::shuffle(m_data, 1), m_x_size, m_y_size);
     }
 };
-
 
 inline int32_t get_int32_t(std::ifstream& file)
 {
@@ -81,7 +66,7 @@ inline int32_t get_int32_t(std::ifstream& file)
 }
 
 // todo: not enough checks for production
-inline Data&& load_data(std::string images_path, std::string labels_path)
+inline Data load_data(std::string images_path, std::string labels_path)
 {
     try
     {
@@ -133,6 +118,7 @@ inline Data&& load_data(std::string images_path, std::string labels_path)
 
         images_file.close();
         labels_file.close();
+        // todo: bad copy?
         return data;
     }
     catch (const std::exception& ex)
