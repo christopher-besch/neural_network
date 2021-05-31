@@ -46,8 +46,7 @@ void Network::sgd(const Data* training_data,
                   float       eta,
                   const Data* test_data)
 {
-    size_t n_test = test_data->get_x().n_cols;
-    size_t n      = training_data->get_x().n_cols;
+    size_t n = training_data->get_x().n_cols;
 
     for (size_t e = 0; e < epochs; ++e)
     {
@@ -62,10 +61,10 @@ void Network::sgd(const Data* training_data,
                               eta);
         }
 
-        if (n_test)
-            std::cout << "Epoch " << e << ": " << evaluate(test_data) << " / " << n_test << std::endl;
+        if (test_data != nullptr)
+            std::cout << "Epoch " << e << ": " << evaluate(test_data) << " / " << test_data->get_y().n_cols << std::endl;
         else
-            std::cout << "Epoch " << e << ": complete";
+            std::cout << "Epoch " << e << ": complete" << std::endl;
     }
 }
 

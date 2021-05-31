@@ -77,6 +77,16 @@ public:
         arma::arma_rng::set_seed_random();
         m_data = arma::shuffle(m_data, 1);
     }
+
+    // not fast, just to play around
+    // todo: untested
+    Data get_switched()
+    {
+        Data switched_data(m_data.n_cols, m_y_size, m_x_size);
+        switched_data.get_x() = get_y();
+        switched_data.get_y() = get_x();
+        return switched_data;
+    }
 };
 
 inline int32_t get_int32_t(std::ifstream& file)
@@ -126,18 +136,19 @@ inline Data load_data(std::string images_path, std::string labels_path)
         // read dataset //
         //////////////////
         // one column per data set
-        Data data(images_amount, n_rows * n_cols, 10);
+        // Data data(images_amount, n_rows * n_cols, 10);
+        Data data(images_amount, 10, n_rows * n_cols);
         for (int i = 0; i < images_amount; ++i)
         {
             for (int pixel_idx = 0; pixel_idx < n_rows * n_cols; ++pixel_idx)
             {
                 uint8_t pixel;
                 images_file.read(reinterpret_cast<char*>(&pixel), 1);
-                data.get_x().at(pixel_idx, i) = pixel / 255.0f;
+                data.get_y().at(pixel_idx, i) = pixel / 255.0f;
             }
             uint8_t label;
             labels_file.read(reinterpret_cast<char*>(&label), 1);
-            data.get_y().at(label, i) = 1.0f;
+            data.get_x().at(label, i) = 1.0f;
         }
 
         images_file.close();

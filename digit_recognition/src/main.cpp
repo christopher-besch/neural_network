@@ -7,6 +7,19 @@
 #include <chrono>
 #include <iostream>
 
+void print_img(const arma::fvec& img)
+{
+    for (int y = 0; y < 28; ++y)
+    {
+        for (int x = 0; x < 28; ++x)
+        {
+            float pixel = img[28 * y + x];
+            std::cout << (pixel > 0.5f ? '#' : ' ');
+        }
+        std::cout << std::endl;
+    }
+}
+
 int main(int argc, const char* argv[])
 {
     auto begin = std::chrono::high_resolution_clock::now();
@@ -23,33 +36,52 @@ int main(int argc, const char* argv[])
 
 #if 0
     int idx = 1;
-    for (int y = 0; y < 28; ++y)
-    {
-        for (int x = 0; x < 28; ++x)
-        {
-            float pixel = training_data.get_x().at(28 * y + x, idx);
-            std::cout << (pixel > 0.5f ? '#' : ' ');
-        }
-        std::cout << std::endl;
-    }
+    print_img(training_data.get_x().col(idx));
     std::cout << training_data.get_y().col(idx) << std::endl;
 
     training_data.shuffle();
-    for (int y = 0; y < 28; ++y)
-    {
-        for (int x = 0; x < 28; ++x)
-        {
-            float pixel = training_data.get_x().at(28 * y + x, idx);
-            std::cout << (pixel > 0.5f ? '#' : ' ');
-        }
-        std::cout << std::endl;
-    }
+    print_img(training_data.get_x().col(idx));
     std::cout << training_data.get_y().col(idx) << std::endl;
 #endif
 
     // learn network
-    Network net = Network({ 784, 30, 10 });
-    net.sgd(&training_data, 5, 10, 3.0f, &test_data);
+    // Network net = Network({ 784, 30, 10 });
+    // net.sgd(&training_data, 5, 30, 3.0f, &test_data);
+
+    Network net = Network({ 10, 50, 50, 784 });
+    net.sgd(&training_data, 20, 30, 3.0f);
+
+    arma::fmat input0 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    arma::fmat input1 = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+    arma::fmat input2 = { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 };
+    arma::fmat input3 = { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
+    arma::fmat input4 = { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 };
+    arma::fmat input5 = { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
+    arma::fmat input6 = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 };
+    arma::fmat input7 = { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 };
+    arma::fmat input8 = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 };
+    arma::fmat input9 = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+    input0            = input0.t();
+    input1            = input1.t();
+    input2            = input2.t();
+    input3            = input3.t();
+    input4            = input4.t();
+    input5            = input5.t();
+    input6            = input6.t();
+    input7            = input7.t();
+    input8            = input8.t();
+    input9            = input9.t();
+    print_img(net.feedforward(input0));
+    print_img(net.feedforward(input1));
+    print_img(net.feedforward(input2));
+    print_img(net.feedforward(input3));
+    print_img(net.feedforward(input4));
+    print_img(net.feedforward(input5));
+    print_img(net.feedforward(input6));
+    print_img(net.feedforward(input7));
+    print_img(net.feedforward(input8));
+    print_img(net.feedforward(input9));
+
 
     // report
     auto      end        = std::chrono::high_resolution_clock::now();
