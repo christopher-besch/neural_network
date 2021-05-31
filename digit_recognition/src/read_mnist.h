@@ -78,8 +78,7 @@ public:
         m_data = arma::shuffle(m_data, 1);
     }
 
-    // not fast, just to play around
-    // todo: untested
+    // switch input and desired output
     Data get_switched()
     {
         Data switched_data(m_data.n_cols, m_y_size, m_x_size);
