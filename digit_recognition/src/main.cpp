@@ -55,11 +55,9 @@ int main(int argc, const char* argv[])
     Data training_data = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
     Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
 
-    std::cout << "switch" << std::endl;
     // x and y switched
     Data switched_training_data = training_data.get_switched();
     Data switched_test_data     = test_data.get_switched();
-
 
     begin = std::chrono::high_resolution_clock::now();
 
@@ -75,9 +73,9 @@ int main(int argc, const char* argv[])
 #endif
 
     // learn network
-#if 0
+#if 1
     Network net = Network({ 784, 30, 10 });
-    net.sgd(&training_data, 5, 30, 3.0f, &test_data);
+    net.sgd(&training_data, 15, 50, 3.0f, &test_data);
 #else
     // switched
     Network net = Network({ 10, 30, 784 });
