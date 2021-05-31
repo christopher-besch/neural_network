@@ -136,19 +136,18 @@ inline Data load_data(std::string images_path, std::string labels_path)
         // read dataset //
         //////////////////
         // one column per data set
-        // Data data(images_amount, n_rows * n_cols, 10);
-        Data data(images_amount, 10, n_rows * n_cols);
+        Data data(images_amount, n_rows * n_cols, 10);
         for (int i = 0; i < images_amount; ++i)
         {
             for (int pixel_idx = 0; pixel_idx < n_rows * n_cols; ++pixel_idx)
             {
                 uint8_t pixel;
                 images_file.read(reinterpret_cast<char*>(&pixel), 1);
-                data.get_y().at(pixel_idx, i) = pixel / 255.0f;
+                data.get_x().at(pixel_idx, i) = pixel / 255.0f;
             }
             uint8_t label;
             labels_file.read(reinterpret_cast<char*>(&label), 1);
-            data.get_x().at(label, i) = 1.0f;
+            data.get_y().at(label, i) = 1.0f;
         }
 
         images_file.close();

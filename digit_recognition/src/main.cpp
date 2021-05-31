@@ -32,8 +32,13 @@ int main(int argc, const char* argv[])
     Data training_data = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
     Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
 
+    // x and y switched
+    Data switched_training_data = training_data.get_switched();
+    Data switched_test_data     = test_data.get_switched();
+
     begin = std::chrono::high_resolution_clock::now();
 
+    // debug print
 #if 0
     int idx = 1;
     print_img(training_data.get_x().col(idx));
@@ -45,11 +50,13 @@ int main(int argc, const char* argv[])
 #endif
 
     // learn network
-    // Network net = Network({ 784, 30, 10 });
-    // net.sgd(&training_data, 5, 30, 3.0f, &test_data);
-
-    Network net = Network({ 10, 50, 50, 784 });
-    net.sgd(&training_data, 20, 30, 3.0f);
+#if 0
+    Network net = Network({ 784, 30, 10 });
+    net.sgd(&training_data, 5, 30, 3.0f, &test_data);
+#else
+    // switched
+    Network net = Network({ 10, 30, 784 });
+    net.sgd(&switched_training_data, 1, 30, 3.0f);
 
     arma::fmat input0 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     arma::fmat input1 = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -81,7 +88,7 @@ int main(int argc, const char* argv[])
     print_img(net.feedforward(input7));
     print_img(net.feedforward(input8));
     print_img(net.feedforward(input9));
-
+#endif
 
     // report
     auto      end        = std::chrono::high_resolution_clock::now();
