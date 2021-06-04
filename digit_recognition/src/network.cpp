@@ -40,11 +40,8 @@ arma::fmat Network::feedforward(arma::fmat a)
     return a;
 }
 
-void Network::sgd(const Data* training_data,
-                  size_t      epochs,
-                  size_t      mini_batch_size,
-                  float       eta,
-                  const Data* test_data)
+void Network::sgd(const Data* training_data, size_t epochs,
+                  size_t mini_batch_size, float eta, const Data* test_data)
 {
     size_t n = training_data->get_x().n_cols;
 
@@ -57,18 +54,19 @@ void Network::sgd(const Data* training_data,
             // make last batch smaller if necessary
             size_t length = offset + mini_batch_size >= n ? n - offset : mini_batch_size;
             update_mini_batch(this_training_data.get_mini_x(offset, length),
-                              this_training_data.get_mini_y(offset, length),
-                              eta);
+                              this_training_data.get_mini_y(offset, length), eta);
         }
 
         if (test_data != nullptr)
-            std::cout << "Epoch " << e << ": " << evaluate(test_data) << " / " << test_data->get_y().n_cols << std::endl;
+            std::cout << "Epoch " << e << ": " << evaluate(test_data) << " / "
+                      << test_data->get_y().n_cols << std::endl;
         else
             std::cout << "Epoch " << e << ": complete" << std::endl;
     }
 }
 
-void Network::update_mini_batch(const arma::subview<float> x, const arma::subview<float> y, float eta)
+void Network::update_mini_batch(const arma::subview<float> x,
+                                const arma::subview<float> y, float eta)
 {
     // sums of gradients <- how do certain weights and biases change the cost
     // layer wise
@@ -105,7 +103,10 @@ void Network::update_mini_batch(const arma::subview<float> x, const arma::subvie
     }
 }
 
-void Network::backprop(const arma::subview<float> x, const arma::subview<float> y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w)
+void Network::backprop(const arma::subview<float> x,
+                       const arma::subview<float> y,
+                       std::vector<arma::fvec>&   nabla_b,
+                       std::vector<arma::fmat>&   nabla_w)
 {
     // activations layer by layer <- needed for backprop algorithm
     // one per layer

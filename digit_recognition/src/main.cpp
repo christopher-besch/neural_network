@@ -75,11 +75,11 @@ int main(int argc, const char* argv[])
     // learn network
 #if 1
     Network net = Network({ 784, 30, 10 });
-    net.sgd(&training_data, 15, 50, 3.0f, &test_data);
+    net.sgd(&training_data, 15, 30, 3.0f, &test_data);
 #else
     // switched
     Network net = Network({ 10, 30, 784 });
-    net.sgd(&switched_training_data, 1, 30, 3.0f);
+    net.sgd(&switched_training_data, 15, 30, 3.0f);
 
     arma::fmat input0 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     arma::fmat input1 = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
