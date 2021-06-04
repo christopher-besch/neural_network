@@ -22,9 +22,6 @@ workspace "neural_network"
     filter "system:windows"
         defines { "WINDOWS" }
 
-    -- cwd
-    debugdir ""
-
 include "digit_recognition"
 include "utils"
 include "vendor/armadillo"
