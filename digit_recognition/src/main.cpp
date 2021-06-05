@@ -53,13 +53,16 @@ int main(int argc, const char* argv[])
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
 
     Data training_data = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
-    Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
+    Data eval_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
 
     // x and y switched
     Data switched_training_data = training_data.get_switched();
-    Data switched_test_data     = test_data.get_switched();
+    Data switched_test_data     = eval_data.get_switched();
 
     begin = std::chrono::high_resolution_clock::now();
+
+    std::shared_ptr<Cost> cross_entropy_cost = std::make_shared<CrossEntropyCost>();
+    std::shared_ptr<Cost> quadratic_cost     = std::make_shared<QuadraticCost>();
 
     // debug print
 #if 0
@@ -72,14 +75,33 @@ int main(int argc, const char* argv[])
     std::cout << training_data.get_y().col(idx) << std::endl;
 #endif
 
+#if 0
+    Network net = Network({ 784, 30, 10 }, cross_entropy_cost);
     // learn network
-#if 1
-    Network net = Network({ 784, 30, 10 });
-    net.sgd(&training_data, 15, 30, 3.0f, &test_data);
+    net.sgd(&training_data,
+            30,   // epochs
+            10,   // mini_batch_size
+            0.5f, // eta
+            0.0f, // lambda
+            &eval_data,
+            false,  // monitor_eval_cost
+            true,   // monitor_eval_accuracy
+            false,  // monitor_train_cost
+            false); // monitor_train_accuracy
+
 #else
     // switched
     Network net = Network({ 10, 30, 784 });
-    net.sgd(&switched_training_data, 15, 30, 3.0f);
+    net.sgd(&switched_training_data,
+            30,   // epochs
+            10,   // mini_batch_size
+            0.5f, // eta
+            0.0f, // lambda
+            nullptr,
+            false,  // monitor_eval_cost
+            false,  // monitor_eval_accuracy
+            false,  // monitor_train_cost
+            false); // monitor_train_accuracy
 
     arma::fmat input0 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     arma::fmat input1 = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };

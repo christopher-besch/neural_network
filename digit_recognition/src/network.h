@@ -1,4 +1,5 @@
 #pragma once
+#include "costs.h"
 #include "pch.h"
 #include "read_mnist.h"
 
@@ -13,57 +14,64 @@ private:
     std::vector<arma::fvec> m_biases;
     // matrix for each space between layers
     // m_weights[i] are between i-th and i+1-th layer
-    // w_(j,k) = weigth from k-th in first layer to j-th in second layer
+    // w_(j,k) = weight from k-th in first layer to j-th in second layer
     std::vector<arma::fmat> m_weights;
+
+    std::shared_ptr<Cost> m_cost;
 
 public:
     // sizes of layers, first is input, last is output
-    Network(const std::vector<size_t>& sizes);
+    // todo: is default possible
+    Network(const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost = std::make_shared<CrossEntropyCost>());
+
+    // init weights with gaussian distribution, mean 0, standard deviation 1, over sqrt of num weights connected to same neuron
+    // init biases with gaussian distribution, mean 0, standard deviation 1
+    void default_weight_init();
+
+    // init weights with gaussian distribution, mean 0, standard deviation 1
+    // init biases with gaussian distribution, mean 0, standard deviation 1
+    void large_weight_init();
 
     // return output of network with input a
     // input is vector as matrix
     // a gets changed
-    arma::fmat feedforward(arma::fmat a);
+    arma::fmat feedforward(arma::fmat a) const;
 
     // stochastic gradient descent
     // eta = learning rate
-    // if test_data given evaluate network after each epoch -> slow
     void sgd(const Data* training_data,
              size_t      epochs,
              size_t      mini_batch_size,
              float       eta,
-             const Data* test_data = nullptr);
+             float       lambda = 0.0f,
+             // monitoring -> slow
+             const Data* eval_data              = nullptr,
+             bool        monitor_eval_cost      = false,
+             bool        monitor_eval_accuracy  = false,
+             bool        monitor_train_cost     = false,
+             bool        monitor_train_accuracy = false);
 
     // update weights and biases
-    void update_mini_batch(const arma::subview<float> x, const arma::subview<float> y, float eta);
+    // lambda = regularization parameter
+    void update_mini_batch(const arma::subview<float> x,
+                           const arma::subview<float> y,
+                           float                      eta,
+                           float                      lambda,
+                           size_t                     n);
 
     // set nabla_b and nabla_w to sum of delta_nabla_b and delta_nabla_w representing gradient of cost function for all data sets in batch
     // layer-by-layer, congruent to m_biases and m_weights
-    void backprop(const arma::subview<float> x, const arma::subview<float> y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w);
+    void backprop(const arma::subview<float> x, const arma::subview<float> y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w) const;
 
     // return number of correct results of neural network
     // neuron in final layer with highest activation determines result
-    size_t evaluate(const Data* test_data);
+    size_t total_accuracy(const Data* data) const;
 
-    // return vector of partial derivatives \partial C_x / \partial a
-    // one column per data set
-    arma::fmat cost_derivative(const arma::fmat& output_activations, const arma::fmat& y)
-    {
-        return output_activations - y;
-    }
+    // return summed cost
+    float total_cost(const Data* data, float lambda) const;
 
-    // vectorized
-    // one column per data set
-    arma::fmat sigmoid(const arma::fmat& z)
-    {
-        return 1.0 / (1.0 + arma::exp(-z));
-    }
-    // derivative of sigmoid function
-    // one column per data set
-    arma::fmat sigmoid_prime(const arma::fmat& z)
-    {
-        return sigmoid(z) % (1 - sigmoid(z));
-    }
+    // return summed cost of all data sets in <data>
+    /* float total_cost(const Data* data, float lambda) const; */
 
-    std::string to_string();
+    std::string to_str() const;
 };
