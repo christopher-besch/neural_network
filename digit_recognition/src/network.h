@@ -67,11 +67,8 @@ public:
     // neuron in final layer with highest activation determines result
     size_t total_accuracy(const Data* data) const;
 
-    // return summed cost
-    float total_cost(const Data* data, float lambda) const;
-
     // return summed cost of all data sets in <data>
-    /* float total_cost(const Data* data, float lambda) const; */
+    float total_cost(const Data* data, float lambda) const;
 
     std::string to_str() const;
 };

@@ -26,7 +26,7 @@ class QuadraticCost : public Cost
     }
     virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) override
     {
-        return (a - y) * sigmoid_prime(z);
+        return (a - y) % sigmoid_prime(z);
     }
 };
 
@@ -34,7 +34,7 @@ class CrossEntropyCost : public Cost
 {
     virtual float fn(const arma::fvec& a, const arma::fvec& y) override
     {
-        arma::fvec result = -y * arma::log(a) - (1 - y) * arma::log(1 - a);
+        arma::fvec result = -y % arma::log(a) - (1 - y) % arma::log(1 - a);
         result.replace(arma::datum::nan, 0.0f);
         // sum of all rows
         return arma::sum(result);

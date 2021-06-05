@@ -35,7 +35,7 @@ void Network::default_weight_init()
     {
         // from next layer to current layer
         m_weights.emplace_back(m_sizes[left_layer_idx + 1], m_sizes[left_layer_idx], arma::fill::randn);
-        m_weights[left_layer_idx] / sqrt(m_sizes[left_layer_idx + 1]);
+        m_weights[left_layer_idx] /= sqrt(m_sizes[left_layer_idx + 1]);
     }
 }
 
@@ -109,13 +109,13 @@ void Network::sgd(const Data* training_data,
         {
             float cost = total_cost(training_data, lambda);
             train_costs.push_back(cost);
-            std::cout << "; Cost on training data: " << cost;
+            std::cout << "  \tCost on training data: " << cost;
         }
         if (monitor_train_accuracy)
         {
             float accuracy = total_accuracy(training_data);
             train_accuracies.push_back(accuracy);
-            std::cout << "; Accuracy on training data: " << accuracy << " / " << n;
+            std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
         }
 
         // only when eval_data is given
@@ -125,14 +125,14 @@ void Network::sgd(const Data* training_data,
             {
                 float cost = total_cost(eval_data, lambda);
                 eval_costs.push_back(cost);
-                std::cout << "; Cost on evaluation data: " << cost;
+                std::cout << "  \tCost on evaluation data: " << cost;
             }
             if (monitor_eval_accuracy)
             {
                 float accuracy = total_accuracy(eval_data);
                 eval_accuracies.push_back(accuracy);
                 size_t n_eval = eval_data->get_y().n_cols;
-                std::cout << "; Accuracy on evaluation data: " << accuracy << " / " << n_eval;
+                std::cout << "  \tAccuracy on evaluation data: " << accuracy << " / " << n_eval;
             }
         }
         std::cout << std::endl;

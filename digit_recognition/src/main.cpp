@@ -75,19 +75,19 @@ int main(int argc, const char* argv[])
     std::cout << training_data.get_y().col(idx) << std::endl;
 #endif
 
-#if 0
+#if 1
     Network net = Network({ 784, 30, 10 }, cross_entropy_cost);
     // learn network
     net.sgd(&training_data,
-            30,   // epochs
-            10,   // mini_batch_size
-            0.5f, // eta
-            0.0f, // lambda
+            30,    // epochs
+            10,    // mini_batch_size
+            0.05f, // eta
+            0.0f,  // lambda
             &eval_data,
-            false,  // monitor_eval_cost
-            true,   // monitor_eval_accuracy
-            false,  // monitor_train_cost
-            false); // monitor_train_accuracy
+            true,  // monitor_eval_cost
+            true,  // monitor_eval_accuracy
+            true,  // monitor_train_cost
+            true); // monitor_train_accuracy
 
 #else
     // switched

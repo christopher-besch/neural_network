@@ -33,7 +33,9 @@ project "digit_recognition"
 
     links {
         "utils",
-        "armadillo"
+        "armadillo",
+        "lapack",
+        "blas"
     }
 
     filter "not system:windows"
