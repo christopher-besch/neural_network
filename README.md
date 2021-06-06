@@ -8,6 +8,6 @@ Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnet
 
 # Dependencies
 
-- armadillo
-- LAPACK and BLAS have to be installed on your system.
+-  armadillo
+-  LAPACK and BLAS have to be installed on your system.
    On Debian based systems you can use `sudo apt-get install libblas-dev liblapack-dev` to install them.
