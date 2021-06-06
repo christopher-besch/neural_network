@@ -64,17 +64,6 @@ int main(int argc, const char* argv[])
     std::shared_ptr<Cost> cross_entropy_cost = std::make_shared<CrossEntropyCost>();
     std::shared_ptr<Cost> quadratic_cost     = std::make_shared<QuadraticCost>();
 
-    // debug print
-#if 0
-    int idx = 1;
-    print_img(training_data.get_x().col(idx));
-    std::cout << training_data.get_y().col(idx) << std::endl;
-
-    training_data.shuffle();
-    print_img(training_data.get_x().col(idx));
-    std::cout << training_data.get_y().col(idx) << std::endl;
-#endif
-
 #if 1
     Network net = Network({ 784, 30, 10 }, cross_entropy_cost);
     // learn network
@@ -93,7 +82,7 @@ int main(int argc, const char* argv[])
     // switched
     Network net = Network({ 10, 30, 784 });
     net.sgd(&switched_training_data,
-            30,   // epochs
+            1,    // epochs
             10,   // mini_batch_size
             0.5f, // eta
             0.0f, // lambda
