@@ -105,19 +105,6 @@ void Network::sgd(const Data* training_data,
 
         // print report
         std::cout << "Epoch " << e << " training complete";
-        if (monitor_train_cost)
-        {
-            float cost = total_cost(training_data, lambda);
-            train_costs.push_back(cost);
-            std::cout << "  \tCost on training data: " << cost;
-        }
-        if (monitor_train_accuracy)
-        {
-            float accuracy = total_accuracy(training_data);
-            train_accuracies.push_back(accuracy);
-            std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
-        }
-
         // only when eval_data is given
         if (eval_data != nullptr)
         {
@@ -134,6 +121,19 @@ void Network::sgd(const Data* training_data,
                 size_t n_eval = eval_data->get_y().n_cols;
                 std::cout << "  \tAccuracy on evaluation data: " << accuracy << " / " << n_eval;
             }
+        }
+
+        if (monitor_train_cost)
+        {
+            float cost = total_cost(training_data, lambda);
+            train_costs.push_back(cost);
+            std::cout << "  \tCost on training data: " << cost;
+        }
+        if (monitor_train_accuracy)
+        {
+            float accuracy = total_accuracy(training_data);
+            train_accuracies.push_back(accuracy);
+            std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
         }
         std::cout << std::endl;
     }
