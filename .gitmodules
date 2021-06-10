@@ -4,3 +4,6 @@
 [submodule "vendor/armadillo"]
 	path = vendor/armadillo
 	url = https://github.com/christopher-besch/armadillo_fork.git
+[submodule "vendor/json"]
+	path = vendor/json
+	url = https://github.com/christopher-besch/cpp_json_fork
