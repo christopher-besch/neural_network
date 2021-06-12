@@ -175,6 +175,7 @@ void Network::update_mini_batch(const arma::subview<float> x,
     // move in opposite direction -> reduce cost
     for (size_t i = 0; i < m_weights.size(); ++i)
     {
+        // include weight decay = L2 regularization
         m_biases[i] *= 1.0f - eta * lambda_over_n;
         m_biases[i] -= eta_over_length * nabla_b[i];
         m_weights[i] -= eta_over_length * nabla_w[i];
@@ -278,14 +279,22 @@ float Network::total_cost(const Data* data, float lambda) const
         arma::subview<float> y = data->get_y().col(i);
         arma::fvec           a = feedforward(x);
 
-        cost += m_cost->fn(a, y) / data->get_x().n_cols;
+        cost += m_cost->fn(a, y);
     }
-    float sum = 0;
+    // take average
+    cost /= data->get_x().n_cols;
+
+    float sum = 0.0f;
     for (const arma::fmat& w : m_weights)
     {
+        // euclidean norm:
+        // || a b ||
+        // || c d ||2 = sqrt(a**2 + b**2 + c**2 + d**2)
         float norm = arma::norm(w);
+        // the squareroot has to be removed
         sum += norm * norm;
     }
+    // L2 regularization
     cost += 0.5f * (lambda / data->get_x().n_cols) * sum;
     return cost;
 }

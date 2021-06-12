@@ -22,6 +22,7 @@ class QuadraticCost : public Cost
 {
     virtual float fn(const arma::fvec& a, const arma::fvec& y) override
     {
+        // euclidean distance to perfect result = null vector
         return arma::norm(0.5f * arma::square(a - y));
     }
     virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) override
@@ -35,6 +36,7 @@ class CrossEntropyCost : public Cost
     virtual float fn(const arma::fvec& a, const arma::fvec& y) override
     {
         arma::fvec result = -y % arma::log(a) - (1 - y) % arma::log(1 - a);
+        // take care of log of numbers close to 0
         result.replace(arma::datum::nan, 0.0f);
         // sum of all rows
         return arma::sum(result);

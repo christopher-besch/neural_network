@@ -30,6 +30,7 @@ public:
 
     // init weights with gaussian distribution, mean 0, standard deviation 1
     // init biases with gaussian distribution, mean 0, standard deviation 1
+    // only to be used as reference
     void large_weight_init();
 
     // return output of network with input a
