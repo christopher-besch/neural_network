@@ -17,28 +17,29 @@ project "digit_recognition"
 
     files {
         "src/**.h",
-        "src/**.cpp"
+        "src/**.cpp",
     }
 
     -- for #include with ""
     includedirs {
         "src",
-        "%{wks.location}/utils/src"
+        "%{wks.location}/utils/src",
     }
 
     -- for #include with <>
     sysincludedirs {
-        "%{wks.location}/vendor/armadillo/include"
+        "%{wks.location}/vendor/armadillo/include",
+        "%{wks.location}/vendor/json",
     }
 
     links {
         "utils",
         "armadillo",
         "lapack",
-        "blas"
+        "blas",
     }
 
     filter "not system:windows"
     links {
-        "pthread"
+        "pthread",
     }

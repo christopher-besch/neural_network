@@ -67,7 +67,7 @@ public:
     {
         // todo: better random
         arma::arma_rng::set_seed_random();
-        return Data(arma::shuffle(m_data, 1), m_x_size, m_y_size);
+        return { arma::shuffle(m_data, 1), m_x_size, m_y_size };
     }
     void shuffle()
     {
@@ -83,5 +83,19 @@ public:
         switched_data.get_x() = get_y();
         switched_data.get_y() = get_x();
         return switched_data;
+    }
+
+    // reduce size of data
+    Data get_sub(size_t new_size) const
+    {
+        if (new_size > m_data.n_cols)
+            raise_error("Can't reduce size of data above current");
+        return { m_data.cols(0, new_size - 1), m_x_size, m_y_size };
+    }
+    void sub(size_t new_size)
+    {
+        if (new_size > m_data.n_cols)
+            raise_error("Can't reduce size of data above current");
+        m_data = m_data.cols(0, new_size - 1);
     }
 };

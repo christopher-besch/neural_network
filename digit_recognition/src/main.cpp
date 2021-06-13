@@ -64,11 +64,16 @@ int main(int argc, const char* argv[])
     std::shared_ptr<Cost> cross_entropy_cost = std::make_shared<CrossEntropyCost>();
     std::shared_ptr<Cost> quadratic_cost     = std::make_shared<QuadraticCost>();
 
+
 #if 1
+    training_data.sub(50000);
     Network net = Network({ 784, 100, 10 }, cross_entropy_cost);
     // set monitoring
     LearnCFG learn_cfg;
-    learn_cfg.monitor_eval_accuracy = true;
+    learn_cfg.monitor_eval_cost      = false;
+    learn_cfg.monitor_eval_accuracy  = true;
+    learn_cfg.monitor_train_cost     = false;
+    learn_cfg.monitor_train_accuracy = false;
 
     // learn network
     net.sgd(&training_data,

@@ -195,7 +195,7 @@ void Network::update_mini_batch(const arma::subview<float> x,
     {
         // include weight decay
         // L1 regularization
-        m_weights[i] -= eta * lambda_l1_over_n;
+        m_weights[i] -= eta * lambda_l1_over_n * arma::sign(m_weights[i]);
         // L2 regularization
         m_weights[i] *= 1.0f - eta * lambda_l2_over_n;
         // approx gradient with mini batch
@@ -315,7 +315,7 @@ float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) co
         {
             sum += arma::accu(arma::abs(w));
         }
-        cost += (lambda_l2 / data->get_x().n_cols) * sum;
+        cost += (lambda_l1 / data->get_x().n_cols) * sum;
     }
     // L2 regularization
     if (lambda_l2)
