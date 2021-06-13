@@ -1,5 +1,6 @@
 #pragma once
 #include "costs.h"
+#include "learn_cfg.h"
 #include "pch.h"
 #include "read_mnist.h"
 
@@ -40,24 +41,25 @@ public:
 
     // stochastic gradient descent
     // eta = learning rate
+    // lambda = regularization parameter
     void sgd(const Data* training_data,
              size_t      epochs,
              size_t      mini_batch_size,
              float       eta,
-             float       lambda = 0.0f,
+             float       lambda_l1 = 0.0f,
+             float       lambda_l2 = 0.0f,
              // monitoring -> slow
-             const Data* eval_data              = nullptr,
-             bool        monitor_eval_cost      = false,
-             bool        monitor_eval_accuracy  = false,
-             bool        monitor_train_cost     = false,
-             bool        monitor_train_accuracy = false);
+             const Data* eval_data = nullptr,
+             // set and store monitoring
+             LearnCFG* learn_cfg = nullptr);
 
     // update weights and biases
     // lambda = regularization parameter
     void update_mini_batch(const arma::subview<float> x,
                            const arma::subview<float> y,
                            float                      eta,
-                           float                      lambda,
+                           float                      lambda_l1,
+                           float                      lambda_l2,
                            size_t                     n);
 
     // set nabla_b and nabla_w to sum of delta_nabla_b and delta_nabla_w representing gradient of cost function for all data sets in batch
@@ -68,8 +70,8 @@ public:
     // neuron in final layer with highest activation determines result
     size_t total_accuracy(const Data* data) const;
 
-    // return summed cost of all data sets in <data>
-    float total_cost(const Data* data, float lambda) const;
+    // return summed and regularized cost of all data sets in <data>
+    float total_cost(const Data* data, float lambda_l1, float lambda_l2) const;
 
     std::string to_str() const;
 };

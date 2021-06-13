@@ -76,17 +76,26 @@ void Network::sgd(const Data* training_data,
                   size_t      epochs,
                   size_t      mini_batch_size,
                   float       eta,
-                  float       lambda,
+                  float       lambda_l1,
+                  float       lambda_l2,
                   const Data* eval_data,
-                  bool        monitor_eval_cost,
-                  bool        monitor_eval_accuracy,
-                  bool        monitor_train_cost,
-                  bool        monitor_train_accuracy)
+                  LearnCFG*   learn_cfg)
 {
     size_t n = training_data->get_x().n_cols;
-
-    std::vector<float> eval_costs, eval_accuracies,
-        train_costs, train_accuracies;
+    // info block
+    std::cout << "Using stochastic gradient descent:" << std::endl;
+    std::cout << "\tepochs: " << epochs << std::endl;
+    std::cout << "\tmini batch size: " << mini_batch_size << std::endl;
+    std::cout << "\teta: " << eta << std::endl;
+    std::cout << "\ttraining set size: " << n << std::endl;
+    if (eval_data != nullptr)
+        std::cout << "\tusing evaluation data of size: " << eval_data->get_x().n_cols << std::endl;
+    else
+        std::cout << "\tusing no evalution data" << std::endl;
+    if (lambda_l1)
+        std::cout << "\tusing L1 regularization with lambda: " << lambda_l1 << std::endl;
+    if (lambda_l2)
+        std::cout << "\tusing L2 regularization with lambda: " << lambda_l2 << std::endl;
 
     // go over epochs
     for (size_t e = 0; e < epochs; ++e)
@@ -100,40 +109,47 @@ void Network::sgd(const Data* training_data,
             size_t length = offset + mini_batch_size >= n ? n - offset : mini_batch_size;
             update_mini_batch(this_training_data.get_mini_x(offset, length),
                               this_training_data.get_mini_y(offset, length),
-                              eta, lambda, n);
+                              eta,
+                              lambda_l1,
+                              lambda_l2,
+                              n);
         }
 
         // print report
         std::cout << "Epoch " << e << " training complete";
-        // only when eval_data is given
-        if (eval_data != nullptr)
+        if (learn_cfg != nullptr)
         {
-            if (monitor_eval_cost)
+            if (learn_cfg->monitor_eval_cost)
             {
-                float cost = total_cost(eval_data, lambda);
-                eval_costs.push_back(cost);
+                // only when eval_data is given
+                if (eval_data == nullptr)
+                    raise_error("evaluation data is required for requested monitoring");
+                float cost = total_cost(eval_data, lambda_l1, lambda_l2);
+                learn_cfg->eval_costs.push_back(cost);
                 std::cout << "  \tCost on evaluation data: " << cost;
             }
-            if (monitor_eval_accuracy)
+            if (learn_cfg->monitor_eval_accuracy)
             {
+                if (eval_data == nullptr)
+                    raise_error("evaluation data is required for requested monitoring");
                 float accuracy = total_accuracy(eval_data);
-                eval_accuracies.push_back(accuracy);
+                learn_cfg->eval_accuracies.push_back(accuracy);
                 size_t n_eval = eval_data->get_y().n_cols;
                 std::cout << "  \tAccuracy on evaluation data: " << accuracy << " / " << n_eval;
             }
-        }
 
-        if (monitor_train_cost)
-        {
-            float cost = total_cost(training_data, lambda);
-            train_costs.push_back(cost);
-            std::cout << "  \tCost on training data: " << cost;
-        }
-        if (monitor_train_accuracy)
-        {
-            float accuracy = total_accuracy(training_data);
-            train_accuracies.push_back(accuracy);
-            std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
+            if (learn_cfg->monitor_train_cost)
+            {
+                float cost = total_cost(training_data, lambda_l1, lambda_l2);
+                learn_cfg->train_costs.push_back(cost);
+                std::cout << "  \tCost on training data: " << cost;
+            }
+            if (learn_cfg->monitor_train_accuracy)
+            {
+                float accuracy = total_accuracy(training_data);
+                learn_cfg->train_accuracies.push_back(accuracy);
+                std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
+            }
         }
         std::cout << std::endl;
     }
@@ -142,7 +158,8 @@ void Network::sgd(const Data* training_data,
 void Network::update_mini_batch(const arma::subview<float> x,
                                 const arma::subview<float> y,
                                 float                      eta,
-                                float                      lambda,
+                                float                      lambda_l1,
+                                float                      lambda_l2,
                                 size_t                     n)
 {
     // sums of gradients <- how do certain weights and biases change the cost
@@ -158,7 +175,7 @@ void Network::update_mini_batch(const arma::subview<float> x,
     }
 
     // use backprop to calculate gradient -> de-/increase delta
-    // use matrices or multiple vectors
+    // use matrix or multiple vectors
 #if 1
     backprop(x, y, nabla_b, nabla_w);
 #else
@@ -169,16 +186,21 @@ void Network::update_mini_batch(const arma::subview<float> x,
 #endif
 
     // optimization
-    float eta_over_length = eta / x.n_cols;
-    float lambda_over_n   = lambda / n;
+    float eta_over_length  = eta / x.n_cols;
+    float lambda_l1_over_n = lambda_l1 / n;
+    float lambda_l2_over_n = lambda_l2 / n;
     // update weights and biases
     // move in opposite direction -> reduce cost
     for (size_t i = 0; i < m_weights.size(); ++i)
     {
-        // include weight decay = L2 regularization
-        m_biases[i] *= 1.0f - eta * lambda_over_n;
-        m_biases[i] -= eta_over_length * nabla_b[i];
+        // include weight decay
+        // L1 regularization
+        m_weights[i] -= eta * lambda_l1_over_n;
+        // L2 regularization
+        m_weights[i] *= 1.0f - eta * lambda_l2_over_n;
+        // approx gradient with mini batch
         m_weights[i] -= eta_over_length * nabla_w[i];
+        m_biases[i] -= eta_over_length * nabla_b[i];
     }
 }
 
@@ -269,7 +291,7 @@ size_t Network::total_accuracy(const Data* data) const
     return sum;
 }
 
-float Network::total_cost(const Data* data, float lambda) const
+float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) const
 {
     float cost = 0.0f;
     // go over all data sets
@@ -284,18 +306,33 @@ float Network::total_cost(const Data* data, float lambda) const
     // take average
     cost /= data->get_x().n_cols;
 
-    float sum = 0.0f;
-    for (const arma::fmat& w : m_weights)
+    // L1 regularization
+    if (lambda_l1)
     {
-        // euclidean norm:
-        // || a b ||
-        // || c d ||2 = sqrt(a**2 + b**2 + c**2 + d**2)
-        float norm = arma::norm(w);
-        // the squareroot has to be removed
-        sum += norm * norm;
+        // sum of absolute of all weights
+        float sum = 0.0f;
+        for (const arma::fmat& w : m_weights)
+        {
+            sum += arma::accu(arma::abs(w));
+        }
+        cost += (lambda_l2 / data->get_x().n_cols) * sum;
     }
     // L2 regularization
-    cost += 0.5f * (lambda / data->get_x().n_cols) * sum;
+    if (lambda_l2)
+    {
+        // sum of squares of all weights
+        float sum = 0.0f;
+        for (const arma::fmat& w : m_weights)
+        {
+            // euclidean norm:
+            // || a b ||
+            // || c d ||2 = sqrt(a**2 + b**2 + c**2 + d**2)
+            float norm = arma::norm(w);
+            // the square root has to be removed
+            sum += norm * norm;
+        }
+        cost += 0.5f * (lambda_l2 / data->get_x().n_cols) * sum;
+    }
     return cost;
 }
 

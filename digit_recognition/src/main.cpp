@@ -66,31 +66,31 @@ int main(int argc, const char* argv[])
 
 #if 1
     Network net = Network({ 784, 100, 10 }, cross_entropy_cost);
+    // set monitoring
+    LearnCFG learn_cfg;
+    learn_cfg.monitor_eval_accuracy = true;
+
     // learn network
     net.sgd(&training_data,
             60,   // epochs
             10,   // mini_batch_size
             0.1f, // eta
-            5.0f, // lambda
+            0.0f, // lambda for L1 regularization
+            5.0f, // lambda for L2 regularization
             &eval_data,
-            false,  // monitor_eval_cost
-            true,   // monitor_eval_accuracy
-            false,  // monitor_train_cost
-            false); // monitor_train_accuracy
+            &learn_cfg);
 
 #else
     // switched
     Network net = Network({ 10, 30, 784 });
     net.sgd(&switched_training_data,
-            5,    // epochs
+            1,    // epochs
             10,   // mini_batch_size
             0.5f, // eta
-            5.0f, // lambda
+            5.0f, // lambda for L1 regularization
+            0.0f, // lambda for L2 regularization
             nullptr,
-            false,  // monitor_eval_cost
-            false,  // monitor_eval_accuracy
-            false,  // monitor_train_cost
-            false); // monitor_train_accuracy
+            nullptr);
 
     arma::fmat input0 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     arma::fmat input1 = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
