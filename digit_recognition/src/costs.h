@@ -8,6 +8,7 @@
 class Cost
 {
 public:
+    virtual ~Cost() = default;
     // only for test data
     // return cost associated with an output <a> and desired output <y>
     virtual float fn(const arma::fvec& a, const arma::fvec& y) = 0;
@@ -15,7 +16,9 @@ public:
     // one column per data set
     virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) = 0;
 
-    virtual ~Cost() = default;
+    virtual std::string to_str() = 0;
+
+    static std::shared_ptr<Cost> get(const std::string& name);
 };
 
 class QuadraticCost : public Cost
@@ -28,6 +31,11 @@ class QuadraticCost : public Cost
     virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) override
     {
         return (a - y) % sigmoid_prime(z);
+    }
+
+    virtual std::string to_str() override
+    {
+        return "quadratic";
     }
 };
 
@@ -44,5 +52,9 @@ class CrossEntropyCost : public Cost
     virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) override
     {
         return a - y;
+    }
+    virtual std::string to_str() override
+    {
+        return "cross_entropy";
     }
 };

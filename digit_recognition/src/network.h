@@ -25,6 +25,20 @@ public:
     // todo: is default possible
     Network(const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost = std::make_shared<CrossEntropyCost>());
 
+    // laod from json
+    Network(const std::string& json_path);
+
+    void save_json(const std::string& path);
+
+    std::string to_str() const;
+
+    // return number of correct results of neural network
+    // neuron in final layer with highest activation determines result
+    size_t total_accuracy(const Data* data) const;
+
+    // return summed and regularized cost of all data sets in <data>
+    float total_cost(const Data* data, float lambda_l1, float lambda_l2) const;
+
     // init weights with gaussian distribution, mean 0, standard deviation 1, over sqrt of num weights connected to same neuron
     // init biases with gaussian distribution, mean 0, standard deviation 1
     void default_weight_init();
@@ -53,6 +67,7 @@ public:
              // set and store monitoring
              LearnCFG* learn_cfg = nullptr);
 
+private:
     // update weights and biases
     // lambda = regularization parameter
     void update_mini_batch(const arma::subview<float> x,
@@ -65,13 +80,4 @@ public:
     // set nabla_b and nabla_w to sum of delta_nabla_b and delta_nabla_w representing gradient of cost function for all data sets in batch
     // layer-by-layer, congruent to m_biases and m_weights
     void backprop(const arma::subview<float> x, const arma::subview<float> y, std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w) const;
-
-    // return number of correct results of neural network
-    // neuron in final layer with highest activation determines result
-    size_t total_accuracy(const Data* data) const;
-
-    // return summed and regularized cost of all data sets in <data>
-    float total_cost(const Data* data, float lambda_l1, float lambda_l2) const;
-
-    std::string to_str() const;
 };

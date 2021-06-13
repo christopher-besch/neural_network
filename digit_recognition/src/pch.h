@@ -2,6 +2,8 @@
 #include <armadillo>
 #include <json.hpp>
 
+using json = nlohmann::json;
+
 #include <algorithm>
 #include <cstdint>
 #include <memory>

@@ -54,6 +54,7 @@ int main(int argc, const char* argv[])
 
     Data training_data = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
     Data eval_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
+    training_data.sub(50000);
 
     // x and y switched
     Data switched_training_data = training_data.get_switched();
@@ -61,13 +62,9 @@ int main(int argc, const char* argv[])
 
     begin = std::chrono::high_resolution_clock::now();
 
-    std::shared_ptr<Cost> cross_entropy_cost = std::make_shared<CrossEntropyCost>();
-    std::shared_ptr<Cost> quadratic_cost     = std::make_shared<QuadraticCost>();
-
-
 #if 1
-    training_data.sub(50000);
-    Network net = Network({ 784, 100, 10 }, cross_entropy_cost);
+    Network net = Network({ 784, 100, 10 }, Cost::get("cross_entropy"));
+
     // set monitoring
     LearnCFG learn_cfg;
     learn_cfg.monitor_eval_cost      = false;
@@ -77,19 +74,19 @@ int main(int argc, const char* argv[])
 
     // learn network
     net.sgd(&training_data,
-            60,   // epochs
+            30,   // epochs
             10,   // mini_batch_size
             0.1f, // eta
             0.0f, // lambda for L1 regularization
             5.0f, // lambda for L2 regularization
             &eval_data,
             &learn_cfg);
-
+    net.save_json("net.json");
 #else
     // switched
-    Network net = Network({ 10, 30, 784 });
+    Network net = Network({ 10, 30, 784 }, Cost::get("cross_entropy"));
     net.sgd(&switched_training_data,
-            1,    // epochs
+            5,    // epochs
             10,   // mini_batch_size
             0.5f, // eta
             5.0f, // lambda for L1 regularization

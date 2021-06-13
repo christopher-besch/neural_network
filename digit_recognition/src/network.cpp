@@ -17,6 +17,167 @@ Network::Network(const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost)
     m_cost = cost;
 }
 
+Network::Network(const std::string& json_path)
+{
+    std::ifstream file(json_path);
+    if (!file)
+        raise_error("Can't open input json file!");
+    json json_net;
+    file >> json_net;
+    file.close();
+
+    m_sizes      = static_cast<std::vector<size_t>>(json_net["sizes"]);
+    m_num_layers = m_sizes.size();
+
+    // loop over layer-by-layer weight sets
+    for (const std::vector<std::vector<float>>& w : static_cast<std::vector<std::vector<std::vector<float>>>>(json_net["weights"]))
+    {
+        // create matrix of weights for this layer-by-layer part
+        arma::fmat weight(w[0].size(), w.size());
+        // loop over columns
+        for (unsigned int x = 0; x < w.size(); ++x)
+            // loop over rows
+            for (unsigned int y = 0; y < w[0].size(); ++y)
+                weight.at(y, x) = w[x][y];
+        m_weights.push_back(weight);
+    }
+
+    for (const std::vector<float>& b : static_cast<std::vector<std::vector<float>>>(json_net["biases"]))
+        m_biases.push_back(b);
+
+    m_cost = Cost::get(json_net["cost"]);
+}
+
+void Network::save_json(const std::string& path)
+{
+    // loop over layer-by-layer weight sets
+    std::vector<std::vector<std::vector<float>>> serialized_weights;
+    for (const arma::fmat& w : m_weights)
+    {
+        std::vector<std::vector<float>> serialized_weight;
+        // add column by column
+        for (unsigned int i = 0; i < w.n_cols; ++i)
+            serialized_weight.push_back(arma::conv_to<std::vector<float>>::from(w.col(i)));
+        serialized_weights.push_back(serialized_weight);
+    }
+    std::vector<std::vector<float>> serialized_biases;
+    for (const arma::fvec& b : m_biases)
+        serialized_biases.push_back(arma::conv_to<std::vector<float>>::from(b));
+
+    json json_net = {
+        { "sizes", m_sizes },
+        { "weights", serialized_weights },
+        { "biases", serialized_biases },
+        { "cost", m_cost->to_str() }
+    };
+
+    std::ofstream file(path);
+    if (!file)
+        raise_error("Can't open output json file!");
+    file << std::setw(4) << json_net;
+    file.close();
+};
+
+std::string Network::to_str() const
+{
+    std::stringstream buffer;
+    buffer << "<Network: sizes: ";
+    for (size_t size : m_sizes)
+        buffer << size << " ";
+    buffer << std::endl
+           << "biases:" << std::endl;
+    for (const arma::fvec& bias : m_biases)
+        buffer << bias.n_rows << " " << bias.n_cols << std::endl;
+    buffer << "weights:" << std::endl;
+    for (const arma::fmat& weight : m_weights)
+        buffer << weight.n_rows << " " << weight.n_cols << std::endl;
+    buffer << ">";
+    return buffer.str();
+}
+
+size_t Network::total_accuracy(const Data* data) const
+{
+    size_t sum = 0;
+    // go over all data sets
+    for (size_t i = 0; i < data->get_x().n_cols; ++i)
+    {
+        arma::subview<float> x = data->get_x().col(i);
+        arma::subview<float> y = data->get_y().col(i);
+        arma::fvec           a = feedforward(x);
+
+        // determine highest confidences
+        float  highest_correct_confidence;
+        size_t correct_number    = -1;
+        bool   got_first_correct = false;
+        float  highest_selected_confidence;
+        size_t selected_number    = -1;
+        bool   got_first_selected = false;
+
+        for (size_t idx = 0; idx < a.n_rows; ++idx)
+        {
+            if (!got_first_correct || y[idx] > highest_correct_confidence)
+            {
+                highest_correct_confidence = y[idx];
+                correct_number             = idx;
+                got_first_correct          = true;
+            }
+            if (!got_first_selected || a[idx] > highest_selected_confidence)
+            {
+                highest_selected_confidence = a[idx];
+                selected_number             = idx;
+                got_first_selected          = true;
+            }
+        }
+        sum += selected_number == correct_number;
+    }
+    return sum;
+}
+
+float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) const
+{
+    float cost = 0.0f;
+    // go over all data sets
+    for (size_t i = 0; i < data->get_x().n_cols; ++i)
+    {
+        arma::subview<float> x = data->get_x().col(i);
+        arma::subview<float> y = data->get_y().col(i);
+        arma::fvec           a = feedforward(x);
+
+        cost += m_cost->fn(a, y);
+    }
+    // take average
+    cost /= data->get_x().n_cols;
+
+    // L1 regularization
+    if (lambda_l1)
+    {
+        // sum of absolute of all weights
+        float sum = 0.0f;
+        for (const arma::fmat& w : m_weights)
+        {
+            sum += arma::accu(arma::abs(w));
+        }
+        cost += (lambda_l1 / data->get_x().n_cols) * sum;
+    }
+    // L2 regularization
+    if (lambda_l2)
+    {
+        // sum of squares of all weights
+        float sum = 0.0f;
+        for (const arma::fmat& w : m_weights)
+        {
+            // euclidean norm:
+            // || a b ||
+            // || c d ||2 = sqrt(a**2 + b**2 + c**2 + d**2)
+            float norm = arma::norm(w);
+            // the square root has to be removed
+            sum += norm * norm;
+        }
+        cost += 0.5f * (lambda_l2 / data->get_x().n_cols) * sum;
+    }
+    return cost;
+}
+
 void Network::default_weight_init()
 {
     m_biases.resize(0);
@@ -251,104 +412,4 @@ void Network::backprop(const arma::subview<float> x,
         // activations is one longer than zs
         nabla_w[layer_idx] += error * activations[layer_idx].t();
     }
-}
-
-size_t Network::total_accuracy(const Data* data) const
-{
-    size_t sum = 0;
-    // go over all data sets
-    for (size_t i = 0; i < data->get_x().n_cols; ++i)
-    {
-        arma::subview<float> x = data->get_x().col(i);
-        arma::subview<float> y = data->get_y().col(i);
-        arma::fvec           a = feedforward(x);
-
-        // determine highest confidences
-        float  highest_correct_confidence;
-        size_t correct_number    = -1;
-        bool   got_first_correct = false;
-        float  highest_selected_confidence;
-        size_t selected_number    = -1;
-        bool   got_first_selected = false;
-
-        for (size_t idx = 0; idx < a.n_rows; ++idx)
-        {
-            if (!got_first_correct || y[idx] > highest_correct_confidence)
-            {
-                highest_correct_confidence = y[idx];
-                correct_number             = idx;
-                got_first_correct          = true;
-            }
-            if (!got_first_selected || a[idx] > highest_selected_confidence)
-            {
-                highest_selected_confidence = a[idx];
-                selected_number             = idx;
-                got_first_selected          = true;
-            }
-        }
-        sum += selected_number == correct_number;
-    }
-    return sum;
-}
-
-float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) const
-{
-    float cost = 0.0f;
-    // go over all data sets
-    for (size_t i = 0; i < data->get_x().n_cols; ++i)
-    {
-        arma::subview<float> x = data->get_x().col(i);
-        arma::subview<float> y = data->get_y().col(i);
-        arma::fvec           a = feedforward(x);
-
-        cost += m_cost->fn(a, y);
-    }
-    // take average
-    cost /= data->get_x().n_cols;
-
-    // L1 regularization
-    if (lambda_l1)
-    {
-        // sum of absolute of all weights
-        float sum = 0.0f;
-        for (const arma::fmat& w : m_weights)
-        {
-            sum += arma::accu(arma::abs(w));
-        }
-        cost += (lambda_l1 / data->get_x().n_cols) * sum;
-    }
-    // L2 regularization
-    if (lambda_l2)
-    {
-        // sum of squares of all weights
-        float sum = 0.0f;
-        for (const arma::fmat& w : m_weights)
-        {
-            // euclidean norm:
-            // || a b ||
-            // || c d ||2 = sqrt(a**2 + b**2 + c**2 + d**2)
-            float norm = arma::norm(w);
-            // the square root has to be removed
-            sum += norm * norm;
-        }
-        cost += 0.5f * (lambda_l2 / data->get_x().n_cols) * sum;
-    }
-    return cost;
-}
-
-std::string Network::to_str() const
-{
-    std::stringstream buffer;
-    buffer << "<Network: sizes: ";
-    for (size_t size : m_sizes)
-        buffer << size << " ";
-    buffer << std::endl
-           << "biases:" << std::endl;
-    for (const arma::fvec& bias : m_biases)
-        buffer << bias.n_cols << " " << bias.n_rows << std::endl;
-    buffer << "weights:" << std::endl;
-    for (const arma::fmat& weight : m_weights)
-        buffer << weight.n_cols << " " << weight.n_rows << std::endl;
-    buffer << ">";
-    return buffer.str();
 }
