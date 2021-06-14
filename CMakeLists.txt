@@ -5,12 +5,8 @@ project(neural_network VERSION 0.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_subdirectory(utils)
-list(APPEND EXTRA_LIBS digit_recognition)
-list(APPEND EXTRA_LIBS utils)
-list(APPEND EXTRA_LIBS utils)
-list(APPEND EXTRA_LIBS utils)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/utils")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/armadillo")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json")
 
-add_executable(neural_network neural_network/src/main.cpp)
-
-target_link_libraries(neural_network PUBLIC ${EXTRA_LIBS})
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/digit_recognition")

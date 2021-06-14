@@ -1,6 +1,6 @@
 #pragma once
 #include <armadillo>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 

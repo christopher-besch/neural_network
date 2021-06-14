@@ -1,9 +1,9 @@
 [submodule "utils"]
 	path = utils
 	url = https://github.com/christopher-besch/cpp_utils.git
+[submodule "vendor/nlohmann_json"]
+	path = vendor/nlohmann_json
+	url = https://github.com/nlohmann/json.git
 [submodule "vendor/armadillo"]
 	path = vendor/armadillo
-	url = https://github.com/christopher-besch/armadillo_fork.git
-[submodule "vendor/json"]
-	path = vendor/json
-	url = https://github.com/christopher-besch/cpp_json_fork
+	url = https://gitlab.com/conradsnicta/armadillo-code.git
