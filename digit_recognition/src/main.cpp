@@ -64,6 +64,8 @@ int main(int argc, const char* argv[])
 
 #if 1
     Network net = Network({ 784, 100, 10 }, Cost::get("cross_entropy"));
+    // net.save_json("net.json");
+    // Network net = Network("net.json");
 
     // set monitoring
     LearnCFG learn_cfg;
@@ -77,11 +79,12 @@ int main(int argc, const char* argv[])
             30,   // epochs
             10,   // mini_batch_size
             0.1f, // eta
+            0.7f, // mu
             0.0f, // lambda for L1 regularization
             5.0f, // lambda for L2 regularization
             &eval_data,
             &learn_cfg);
-    net.save_json("net.json");
+    net.save_json("out_net.json");
 #else
     // switched
     Network net = Network({ 10, 30, 784 }, Cost::get("cross_entropy"));

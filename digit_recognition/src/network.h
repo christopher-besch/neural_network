@@ -18,6 +18,10 @@ private:
     // w_(j,k) = weight from k-th in first layer to j-th in second layer
     std::vector<arma::fmat> m_weights;
 
+    // used for momentum-based gradient descent
+    std::vector<arma::fmat> m_vel_biases;
+    std::vector<arma::fmat> m_vel_weights;
+
     std::shared_ptr<Cost> m_cost;
 
 public:
@@ -55,11 +59,13 @@ public:
 
     // stochastic gradient descent
     // eta = learning rate
+    // mu = momentum co-efficient
     // lambda = regularization parameter
     void sgd(const Data* training_data,
              size_t      epochs,
              size_t      mini_batch_size,
              float       eta,
+             float       mu        = 0.0f,
              float       lambda_l1 = 0.0f,
              float       lambda_l2 = 0.0f,
              // monitoring -> slow
@@ -68,11 +74,17 @@ public:
              LearnCFG* learn_cfg = nullptr);
 
 private:
+    // set velocities to 0
+    void reset_vel();
+
     // update weights and biases
+    // eta = learning rate
+    // mu = momentum co-efficient
     // lambda = regularization parameter
     void update_mini_batch(const arma::subview<float> x,
                            const arma::subview<float> y,
                            float                      eta,
+                           float                      mu,
                            float                      lambda_l1,
                            float                      lambda_l2,
                            size_t                     n);

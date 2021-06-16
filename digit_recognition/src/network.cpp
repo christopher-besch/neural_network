@@ -13,6 +13,7 @@ Network::Network(const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost)
     m_sizes      = sizes;
 
     default_weight_init();
+    reset_vel();
 
     m_cost = cost;
 }
@@ -46,6 +47,8 @@ Network::Network(const std::string& json_path)
         m_biases.push_back(b);
 
     m_cost = Cost::get(json_net["cost"]);
+
+    reset_vel();
 }
 
 void Network::save_json(const std::string& path)
@@ -237,6 +240,7 @@ void Network::sgd(const Data* training_data,
                   size_t      epochs,
                   size_t      mini_batch_size,
                   float       eta,
+                  float       mu,
                   float       lambda_l1,
                   float       lambda_l2,
                   const Data* eval_data,
@@ -248,6 +252,7 @@ void Network::sgd(const Data* training_data,
     std::cout << "\tepochs: " << epochs << std::endl;
     std::cout << "\tmini batch size: " << mini_batch_size << std::endl;
     std::cout << "\teta: " << eta << std::endl;
+    std::cout << "\tmu: " << mu << std::endl;
     std::cout << "\ttraining set size: " << n << std::endl;
     if (eval_data != nullptr)
         std::cout << "\tusing evaluation data of size: " << eval_data->get_x().n_cols << std::endl;
@@ -271,6 +276,7 @@ void Network::sgd(const Data* training_data,
             update_mini_batch(this_training_data.get_mini_x(offset, length),
                               this_training_data.get_mini_y(offset, length),
                               eta,
+                              mu,
                               lambda_l1,
                               lambda_l2,
                               n);
@@ -316,9 +322,23 @@ void Network::sgd(const Data* training_data,
     }
 }
 
+void Network::reset_vel()
+{
+    m_vel_biases.resize(m_biases.size());
+    m_vel_weights.resize(m_weights.size());
+    // set to size of weights and biases
+    // start at all 0
+    for (size_t i = 0; i < m_vel_biases.size(); ++i)
+    {
+        m_vel_biases[i]  = arma::fvec(m_biases[i].n_rows, arma::fill::zeros);
+        m_vel_weights[i] = arma::fmat(m_weights[i].n_rows, m_weights[i].n_cols, arma::fill::zeros);
+    }
+}
+
 void Network::update_mini_batch(const arma::subview<float> x,
                                 const arma::subview<float> y,
                                 float                      eta,
+                                float                      mu,
                                 float                      lambda_l1,
                                 float                      lambda_l2,
                                 size_t                     n)
@@ -356,12 +376,21 @@ void Network::update_mini_batch(const arma::subview<float> x,
     {
         // include weight decay
         // L1 regularization
-        m_weights[i] -= eta * lambda_l1_over_n * arma::sign(m_weights[i]);
+        m_vel_weights[i] -= eta * lambda_l1_over_n * arma::sign(m_weights[i]);
         // L2 regularization
-        m_weights[i] *= 1.0f - eta * lambda_l2_over_n;
+        m_vel_weights[i] *= 1.0f - eta * lambda_l2_over_n;
+
+        // update velocity
+        // apply momentum co-efficient
+        m_vel_weights[i] *= mu;
+        m_vel_biases[i] *= mu;
         // approx gradient with mini batch
-        m_weights[i] -= eta_over_length * nabla_w[i];
-        m_biases[i] -= eta_over_length * nabla_b[i];
+        m_vel_weights[i] -= eta_over_length * nabla_w[i];
+        m_vel_biases[i] -= eta_over_length * nabla_b[i];
+
+        // apply velocity
+        m_weights[i] += m_vel_weights[i];
+        m_biases[i] += m_vel_biases[i];
     }
 }
 
