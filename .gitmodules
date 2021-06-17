@@ -4,6 +4,3 @@
 [submodule "vendor/nlohmann_json"]
 	path = vendor/nlohmann_json
 	url = https://github.com/nlohmann/json.git
-[submodule "vendor/armadillo"]
-	path = vendor/armadillo
-	url = https://gitlab.com/conradsnicta/armadillo-code.git
