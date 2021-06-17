@@ -6,4 +6,4 @@
 	url = https://github.com/nlohmann/json.git
 [submodule "vendor/armadillo"]
 	path = vendor/armadillo
-	url = https://github.com/christopher-besch/armadillo_fork
+	url = https://gitlab.com/conradsnicta/armadillo-code/
