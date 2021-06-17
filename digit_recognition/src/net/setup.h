@@ -4,9 +4,11 @@
 #include "pch.h"
 
 // sizes of layers, first is input, last is output
+// beware of memory leaks
 Network* create_network(const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost = std::make_shared<CrossEntropyCost>());
 
 // laod from json
+// beware of memory leaks
 Network* load_json_network(const std::string& json_path);
 
 void save_json(const Network* net, const std::string& path);

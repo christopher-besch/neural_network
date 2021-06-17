@@ -18,6 +18,7 @@ arma::fmat feedforward(const Network* net, arma::fmat a);
 
 // stochastic gradient descent
 // eta = learning rate
+// no_improvement_in = half eta after not improving in that many epochs; use 0 to disable
 // mu = momentum co-efficient
 // lambda = regularization parameter
 void sgd(Network*    net,
@@ -25,11 +26,12 @@ void sgd(Network*    net,
          size_t      epochs,
          size_t      mini_batch_size,
          float       eta,
-         float       mu        = 0.0f,
-         float       lambda_l1 = 0.0f,
-         float       lambda_l2 = 0.0f,
+         size_t      no_improvement_in = 0,
+         float       mu                = 0.0f,
+         float       lambda_l1         = 0.0f,
+         float       lambda_l2         = 0.0f,
          // monitoring -> slow
-         const Data* eval_data = nullptr,
+         const Data* test_data = nullptr,
          // set and store monitoring
          LearnCFG* learn_cfg = nullptr);
 

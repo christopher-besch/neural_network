@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "setup.h"
+
 Network* create_network(const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost)
 {
     Network* net = new Network();

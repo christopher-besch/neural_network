@@ -2,12 +2,12 @@
 
 struct LearnCFG
 {
-    bool monitor_eval_cost      = false;
-    bool monitor_eval_accuracy  = false;
+    bool monitor_test_cost      = false;
+    bool monitor_test_accuracy  = false;
     bool monitor_train_cost     = false;
     bool monitor_train_accuracy = false;
 
     // results
-    std::vector<float> eval_costs, eval_accuracies,
+    std::vector<float> test_costs, test_accuracies,
         train_costs, train_accuracies;
 };

@@ -10,29 +10,6 @@
 #include <chrono>
 #include <iostream>
 
-#if 0
-#include <cstdio>
-#include <cstdlib>
-#include <new>
-// replacement of a minimal set of functions:
-void* operator new(std::size_t sz) // no inline, required by [replacement.functions]/3
-{
-    std::printf("global op new called, size = %zu\n", sz);
-    if (sz == 0)
-        ++sz; // avoid std::malloc(0) which may return nullptr on success
-
-    if (void* ptr = std::malloc(sz))
-        return ptr;
-
-    throw std::bad_alloc {}; // required by [new.delete.single]/3
-}
-void operator delete(void* ptr) noexcept
-{
-    std::puts("global op delete called");
-    std::free(ptr);
-}
-#endif
-
 void print_img(const arma::fvec& img)
 {
     for (int y = 0; y < 28; ++y)
@@ -56,24 +33,22 @@ int main(int argc, const char* argv[])
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
 
     Data training_data = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
-    Data eval_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
+    Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
     training_data.sub(50000);
 
     // x and y switched
     Data switched_training_data = training_data.get_switched();
-    Data switched_test_data     = eval_data.get_switched();
+    Data switched_test_data     = test_data.get_switched();
 
     begin = std::chrono::high_resolution_clock::now();
 
 #if 1
     Network* net = create_network({ 784, 100, 10 }, Cost::get("cross_entropy"));
-    // net.save_json("net.json");
-    // Network net = Network("net.json");
 
     // set monitoring
     LearnCFG learn_cfg;
-    learn_cfg.monitor_eval_cost      = true;
-    learn_cfg.monitor_eval_accuracy  = true;
+    learn_cfg.monitor_test_cost      = true;
+    learn_cfg.monitor_test_accuracy  = true;
     learn_cfg.monitor_train_cost     = true;
     learn_cfg.monitor_train_accuracy = true;
 
@@ -83,23 +58,29 @@ int main(int argc, const char* argv[])
         30,   // epochs
         10,   // mini_batch_size
         0.1f, // eta
+        0,
         0.7f, // mu
         0.0f, // lambda for L1 regularization
         5.0f, // lambda for L2 regularization
-        &eval_data,
+        &test_data,
         &learn_cfg);
     save_json(net, "out_net.json");
+
+    delete net;
 #else
     // switched
-    Network net = Network({ 10, 30, 784 }, Cost::get("cross_entropy"));
-    net.sgd(&switched_training_data,
-            5,    // epochs
-            10,   // mini_batch_size
-            0.5f, // eta
-            5.0f, // lambda for L1 regularization
-            0.0f, // lambda for L2 regularization
-            nullptr,
-            nullptr);
+    Network* net = create_network({ 10, 30, 784 }, Cost::get("cross_entropy"));
+    sgd(net,
+        &switched_training_data,
+        5,    // epochs
+        10,   // mini_batch_size
+        0.5f, // eta
+        0,
+        0.0f, // mu
+        5.0f, // lambda for L1 regularization
+        0.0f, // lambda for L2 regularization
+        nullptr,
+        nullptr);
 
     arma::fmat input0 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     arma::fmat input1 = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -121,16 +102,17 @@ int main(int argc, const char* argv[])
     input7            = input7.t();
     input8            = input8.t();
     input9            = input9.t();
-    print_img(net.feedforward(input0));
-    print_img(net.feedforward(input1));
-    print_img(net.feedforward(input2));
-    print_img(net.feedforward(input3));
-    print_img(net.feedforward(input4));
-    print_img(net.feedforward(input5));
-    print_img(net.feedforward(input6));
-    print_img(net.feedforward(input7));
-    print_img(net.feedforward(input8));
-    print_img(net.feedforward(input9));
+    print_img(feedforward(net, input0));
+    print_img(feedforward(net, input1));
+    print_img(feedforward(net, input2));
+    print_img(feedforward(net, input3));
+    print_img(feedforward(net, input4));
+    print_img(feedforward(net, input5));
+    print_img(feedforward(net, input6));
+    print_img(feedforward(net, input7));
+    print_img(feedforward(net, input8));
+    print_img(feedforward(net, input9));
+    delete net;
 #endif
 
     // report

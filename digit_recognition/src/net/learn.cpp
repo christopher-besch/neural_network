@@ -104,10 +104,11 @@ void sgd(Network*    net,
          size_t      epochs,
          size_t      mini_batch_size,
          float       eta,
+         size_t      no_improvement_in,
          float       mu,
          float       lambda_l1,
          float       lambda_l2,
-         const Data* eval_data,
+         const Data* test_data,
          LearnCFG*   learn_cfg)
 {
     size_t n = training_data->get_x().n_cols;
@@ -118,10 +119,10 @@ void sgd(Network*    net,
     std::cout << "\teta: " << eta << std::endl;
     std::cout << "\tmu: " << mu << std::endl;
     std::cout << "\ttraining set size: " << n << std::endl;
-    if (eval_data != nullptr)
-        std::cout << "\tusing evaluation data of size: " << eval_data->get_x().n_cols << std::endl;
+    if (test_data != nullptr)
+        std::cout << "\tusing test data of size: " << test_data->get_x().n_cols << std::endl;
     else
-        std::cout << "\tusing no evalution data" << std::endl;
+        std::cout << "\tusing no test data" << std::endl;
     if (lambda_l1)
         std::cout << "\tusing L1 regularization with lambda: " << lambda_l1 << std::endl;
     if (lambda_l2)
@@ -151,23 +152,23 @@ void sgd(Network*    net,
         std::cout << "Epoch " << e << " training complete";
         if (learn_cfg != nullptr)
         {
-            if (learn_cfg->monitor_eval_cost)
+            if (learn_cfg->monitor_test_cost)
             {
-                // only when eval_data is given
-                if (eval_data == nullptr)
-                    raise_error("evaluation data is required for requested monitoring");
-                float cost = total_cost(net, eval_data, lambda_l1, lambda_l2);
-                learn_cfg->eval_costs.push_back(cost);
-                std::cout << "  \tCost on evaluation data: " << cost;
+                // only when test_data is given
+                if (test_data == nullptr)
+                    raise_error("test data is required for requested monitoring");
+                float cost = total_cost(net, test_data, lambda_l1, lambda_l2);
+                learn_cfg->test_costs.push_back(cost);
+                std::cout << "  \tCost on test data: " << cost;
             }
-            if (learn_cfg->monitor_eval_accuracy)
+            if (learn_cfg->monitor_test_accuracy)
             {
-                if (eval_data == nullptr)
-                    raise_error("evaluation data is required for requested monitoring");
-                float accuracy = total_accuracy(net, eval_data);
-                learn_cfg->eval_accuracies.push_back(accuracy);
-                size_t n_eval = eval_data->get_y().n_cols;
-                std::cout << "  \tAccuracy on evaluation data: " << accuracy << " / " << n_eval;
+                if (test_data == nullptr)
+                    raise_error("test data is required for requested monitoring");
+                float accuracy = total_accuracy(net, test_data);
+                learn_cfg->test_accuracies.push_back(accuracy);
+                size_t n_test = test_data->get_y().n_cols;
+                std::cout << "  \tAccuracy on test data: " << accuracy << " / " << n_test;
             }
 
             if (learn_cfg->monitor_train_cost)
@@ -184,6 +185,13 @@ void sgd(Network*    net,
             }
         }
         std::cout << std::endl;
+
+        // learning rate schedule
+        if (no_improvement_in)
+        {
+            if (test_data == nullptr)
+                raise_error("test data is required for requested monitoring");
+        }
     }
 }
 
