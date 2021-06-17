@@ -20,12 +20,21 @@ Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnet
 ## Eta
 - find threshold of immediate (in first few epochs) decrease, no rise or oscillation of training cost
 - order of magnitude: start with 0.01, multiply or divide by 10
-- compare multiple values directly above found magnitude
+- fine tune: compare multiple values directly above found magnitude
 - iterate a few times
 - use early stopping or half threshold
 
 ## Lambda
 - validation accuracy
+- start with 0 and get good eta
+- start at 1
+- order of magnitude as with eta
+- fine tune as with eta
+- re-optimize eta
+- bouncing with eta
 
 ## Mini-Batch Size
-- validation accuracy
+- roughly optimize other hyper-parameters
+- plot validation accuracy versus time -> try many different
+- scale eta anti-proportional to mini-batch size
+- proceed by optimizing other hyper-parameters
