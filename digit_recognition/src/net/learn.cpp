@@ -1,104 +1,10 @@
 #include "pch.h"
 
-#include "network.h"
+#include "learn.h"
 
 #include <random>
 
-Network::Network(const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost)
-{
-    // todo: make multi threaded
-    arma::arma_rng::set_seed_random();
-
-    m_num_layers = sizes.size();
-    m_sizes      = sizes;
-
-    default_weight_init();
-    reset_vel();
-
-    m_cost = cost;
-}
-
-Network::Network(const std::string& json_path)
-{
-    std::ifstream file(json_path);
-    if (!file)
-        raise_error("Can't open input json file!");
-    json json_net;
-    file >> json_net;
-    file.close();
-
-    m_sizes      = static_cast<std::vector<size_t>>(json_net["sizes"]);
-    m_num_layers = m_sizes.size();
-
-    // loop over layer-by-layer weight sets
-    for (const std::vector<std::vector<float>>& w : static_cast<std::vector<std::vector<std::vector<float>>>>(json_net["weights"]))
-    {
-        // create matrix of weights for this layer-by-layer part
-        arma::fmat weight(w[0].size(), w.size());
-        // loop over columns
-        for (unsigned int x = 0; x < w.size(); ++x)
-            // loop over rows
-            for (unsigned int y = 0; y < w[0].size(); ++y)
-                weight.at(y, x) = w[x][y];
-        m_weights.push_back(weight);
-    }
-
-    for (const std::vector<float>& b : static_cast<std::vector<std::vector<float>>>(json_net["biases"]))
-        m_biases.push_back(b);
-
-    m_cost = Cost::get(json_net["cost"]);
-
-    reset_vel();
-}
-
-void Network::save_json(const std::string& path)
-{
-    // loop over layer-by-layer weight sets
-    std::vector<std::vector<std::vector<float>>> serialized_weights;
-    for (const arma::fmat& w : m_weights)
-    {
-        std::vector<std::vector<float>> serialized_weight;
-        // add column by column
-        for (unsigned int i = 0; i < w.n_cols; ++i)
-            serialized_weight.push_back(arma::conv_to<std::vector<float>>::from(w.col(i)));
-        serialized_weights.push_back(serialized_weight);
-    }
-    std::vector<std::vector<float>> serialized_biases;
-    for (const arma::fvec& b : m_biases)
-        serialized_biases.push_back(arma::conv_to<std::vector<float>>::from(b));
-
-    json json_net = {
-        { "sizes", m_sizes },
-        { "weights", serialized_weights },
-        { "biases", serialized_biases },
-        { "cost", m_cost->to_str() }
-    };
-
-    std::ofstream file(path);
-    if (!file)
-        raise_error("Can't open output json file!");
-    file << std::setw(4) << json_net;
-    file.close();
-};
-
-std::string Network::to_str() const
-{
-    std::stringstream buffer;
-    buffer << "<Network: sizes: ";
-    for (size_t size : m_sizes)
-        buffer << size << " ";
-    buffer << std::endl
-           << "biases:" << std::endl;
-    for (const arma::fvec& bias : m_biases)
-        buffer << bias.n_rows << " " << bias.n_cols << std::endl;
-    buffer << "weights:" << std::endl;
-    for (const arma::fmat& weight : m_weights)
-        buffer << weight.n_rows << " " << weight.n_cols << std::endl;
-    buffer << ">";
-    return buffer.str();
-}
-
-size_t Network::total_accuracy(const Data* data) const
+size_t total_accuracy(const Network* net, const Data* data) const
 {
     size_t sum = 0;
     // go over all data sets
@@ -136,7 +42,7 @@ size_t Network::total_accuracy(const Data* data) const
     return sum;
 }
 
-float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) const
+float total_cost(const Network* net, const Data* data, float lambda_l1, float lambda_l2) const
 {
     float cost = 0.0f;
     // go over all data sets
@@ -146,7 +52,7 @@ float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) co
         arma::subview<float> y = data->get_y().col(i);
         arma::fvec           a = feedforward(x);
 
-        cost += m_cost->fn(a, y);
+        cost += net->cost->fn(a, y);
     }
     // take average
     cost /= data->get_x().n_cols;
@@ -156,7 +62,7 @@ float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) co
     {
         // sum of absolute of all weights
         float sum = 0.0f;
-        for (const arma::fmat& w : m_weights)
+        for (const arma::fmat& w : net->weights)
         {
             sum += arma::accu(arma::abs(w));
         }
@@ -167,7 +73,7 @@ float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) co
     {
         // sum of squares of all weights
         float sum = 0.0f;
-        for (const arma::fmat& w : m_weights)
+        for (const arma::fmat& w : net->weights)
         {
             // euclidean norm:
             // || a b ||
@@ -181,70 +87,28 @@ float Network::total_cost(const Data* data, float lambda_l1, float lambda_l2) co
     return cost;
 }
 
-void Network::default_weight_init()
-{
-    m_biases.resize(0);
-    // one for each layer except input layer
-    m_biases.reserve(m_num_layers - 1);
-    for (size_t layer_idx = 1; layer_idx < m_num_layers; ++layer_idx)
-    {
-        m_biases.emplace_back(m_sizes[layer_idx], 1, arma::fill::randn);
-    }
-
-    m_weights.resize(0);
-    // one for each layer except input layer
-    // one for each space between layers
-    m_weights.reserve(m_num_layers - 1);
-    for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
-    {
-        // from next layer to current layer
-        m_weights.emplace_back(m_sizes[left_layer_idx + 1], m_sizes[left_layer_idx], arma::fill::randn);
-        m_weights[left_layer_idx] /= sqrt(m_sizes[left_layer_idx + 1]);
-    }
-}
-
-void Network::large_weight_init()
-{
-    m_biases.resize(0);
-    // one for each layer except input layer
-    m_biases.reserve(m_num_layers - 1);
-    for (size_t layer_idx = 1; layer_idx < m_num_layers; ++layer_idx)
-    {
-        m_biases.emplace_back(m_sizes[layer_idx], 1, arma::fill::randn);
-    }
-
-    m_weights.resize(0);
-    // one for each layer except input layer
-    // one for each space between layers
-    m_weights.reserve(m_num_layers - 1);
-    for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
-    {
-        // from next layer to current layer
-        m_weights.emplace_back(m_sizes[left_layer_idx + 1], m_sizes[left_layer_idx], arma::fill::randn);
-    }
-}
-
-arma::fmat Network::feedforward(arma::fmat a) const
+arma::fmat feedforward(const Network* net, arma::fmat a) const
 {
     // loop over each layer
-    for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
+    for (size_t left_layer_idx = 0; left_layer_idx < net->num_layers - 1; ++left_layer_idx)
     {
         //                               <- actually of right layer
-        arma::fmat biases_mat = m_biases[left_layer_idx] * arma::fmat(1, a.n_cols, arma::fill::ones);
-        a                     = sigmoid(m_weights[left_layer_idx] * a + biases_mat);
+        arma::fmat biases_mat = net->biases[left_layer_idx] * arma::fmat(1, a.n_cols, arma::fill::ones);
+        a                     = sigmoid(net->weights[left_layer_idx] * a + biases_mat);
     }
     return a;
 }
 
-void Network::sgd(const Data* training_data,
-                  size_t      epochs,
-                  size_t      mini_batch_size,
-                  float       eta,
-                  float       mu,
-                  float       lambda_l1,
-                  float       lambda_l2,
-                  const Data* eval_data,
-                  LearnCFG*   learn_cfg)
+void sgd(const Network* net,
+         const Data*    training_data,
+         size_t         epochs,
+         size_t         mini_batch_size,
+         float          eta,
+         float          mu,
+         float          lambda_l1,
+         float          lambda_l2,
+         const Data*    eval_data,
+         LearnCFG*      learn_cfg)
 {
     size_t n = training_data->get_x().n_cols;
     // info block
@@ -322,37 +186,25 @@ void Network::sgd(const Data* training_data,
     }
 }
 
-void Network::reset_vel()
-{
-    m_vel_biases.resize(m_biases.size());
-    m_vel_weights.resize(m_weights.size());
-    // set to size of weights and biases
-    // start at all 0
-    for (size_t i = 0; i < m_vel_biases.size(); ++i)
-    {
-        m_vel_biases[i]  = arma::fvec(m_biases[i].n_rows, arma::fill::zeros);
-        m_vel_weights[i] = arma::fmat(m_weights[i].n_rows, m_weights[i].n_cols, arma::fill::zeros);
-    }
-}
-
-void Network::update_mini_batch(const arma::subview<float> x,
-                                const arma::subview<float> y,
-                                float                      eta,
-                                float                      mu,
-                                float                      lambda_l1,
-                                float                      lambda_l2,
-                                size_t                     n)
+void update_mini_batch(cosnt Network*             net,
+                       const arma::subview<float> x,
+                       const arma::subview<float> y,
+                       float                      eta,
+                       float                      mu,
+                       float                      lambda_l1,
+                       float                      lambda_l2,
+                       size_t                     n)
 {
     // sums of gradients <- how do certain weights and biases change the cost
     // layer-wise
-    std::vector<arma::fvec> nabla_b(m_biases.size());
-    std::vector<arma::fmat> nabla_w(m_weights.size());
+    std::vector<arma::fvec> nabla_b(net->biases.size());
+    std::vector<arma::fmat> nabla_w(net->weights.size());
     // set to size of weights and biases
     // start at all 0
     for (size_t i = 0; i < nabla_b.size(); ++i)
     {
-        nabla_b[i] = arma::fvec(m_biases[i].n_rows, arma::fill::zeros);
-        nabla_w[i] = arma::fmat(m_weights[i].n_rows, m_weights[i].n_cols, arma::fill::zeros);
+        nabla_b[i] = arma::fvec(net->biases[i].n_rows, arma::fill::zeros);
+        nabla_w[i] = arma::fmat(net->weights[i].n_rows, net->weights[i].n_cols, arma::fill::zeros);
     }
 
     // use backprop to calculate gradient -> de-/increase delta
@@ -372,55 +224,56 @@ void Network::update_mini_batch(const arma::subview<float> x,
     float lambda_l2_over_n = lambda_l2 / n;
     // update weights and biases
     // move in opposite direction -> reduce cost
-    for (size_t i = 0; i < m_weights.size(); ++i)
+    for (size_t i = 0; i < net->weights.size(); ++i)
     {
         // include weight decay
         // L1 regularization
-        m_vel_weights[i] -= eta * lambda_l1_over_n * arma::sign(m_weights[i]);
+        net->vel_weights[i] -= eta * lambda_l1_over_n * arma::sign(net->weights[i]);
         // L2 regularization
-        m_vel_weights[i] *= 1.0f - eta * lambda_l2_over_n;
+        net->vel_weights[i] *= 1.0f - eta * lambda_l2_over_n;
 
         // update velocity
         // apply momentum co-efficient
-        m_vel_weights[i] *= mu;
-        m_vel_biases[i] *= mu;
+        net->vel_weights[i] *= mu;
+        net->vel_biases[i] *= mu;
         // approx gradient with mini batch
-        m_vel_weights[i] -= eta_over_length * nabla_w[i];
-        m_vel_biases[i] -= eta_over_length * nabla_b[i];
+        net->vel_weights[i] -= eta_over_length * nabla_w[i];
+        net->vel_biases[i] -= eta_over_length * nabla_b[i];
 
         // apply velocity
-        m_weights[i] += m_vel_weights[i];
-        m_biases[i] += m_vel_biases[i];
+        net->weights[i] += net->vel_weights[i];
+        net->biases[i] += net->vel_biases[i];
     }
 }
 
-void Network::backprop(const arma::subview<float> x,
-                       const arma::subview<float> y,
-                       std::vector<arma::fvec>&   nabla_b,
-                       std::vector<arma::fmat>&   nabla_w) const
+void backprop(const Network*             net,
+              const arma::subview<float> x,
+              const arma::subview<float> y,
+              std::vector<arma::fvec>&   nabla_b,
+              std::vector<arma::fmat>&   nabla_w) const
 {
     // activations layer by layer <- needed by backprop algorithm
     // one per layer
     std::vector<arma::fmat> activations { x };
-    activations.reserve(m_num_layers);
+    activations.reserve(net->num_layers);
     // list of inputs for sigmoid function
     // one for each layer, except input
     std::vector<arma::fmat> zs;
-    zs.reserve(m_num_layers - 1);
+    zs.reserve(net->num_layers - 1);
 
     // feedforward
-    for (size_t left_layer_idx = 0; left_layer_idx < m_num_layers - 1; ++left_layer_idx)
+    for (size_t left_layer_idx = 0; left_layer_idx < net->num_layers - 1; ++left_layer_idx)
     {
         // extend biases with as many copied columns as there are data sets in the batch
         //                               <- actually right layer
-        arma::fmat biases_mat = m_biases[left_layer_idx] * arma::fmat(1, x.n_cols, arma::fill::ones);
+        arma::fmat biases_mat = net->biases[left_layer_idx] * arma::fmat(1, x.n_cols, arma::fill::ones);
         // weighted input
-        zs.emplace_back(m_weights[left_layer_idx] * activations[activations.size() - 1] + biases_mat);
+        zs.emplace_back(net->weights[left_layer_idx] * activations[activations.size() - 1] + biases_mat);
         activations.emplace_back(sigmoid(zs[zs.size() - 1]));
     }
 
     // calculate error for last layer (BP1)
-    arma::fmat error = m_cost->error(zs[zs.size() - 1], activations[activations.size() - 1], y);
+    arma::fmat error = net->cost->error(zs[zs.size() - 1], activations[activations.size() - 1], y);
     // get gradient with respect to biases (BP3)
     // sum errors from each data set together -> sum into single column
     nabla_b[nabla_b.size() - 1] += arma::sum(error, 1);
@@ -429,12 +282,12 @@ void Network::backprop(const arma::subview<float> x,
 
     // for all other layers
     // start at penultimate element of zs and go back to first
-    for (int64_t layer_idx = m_num_layers - 3; layer_idx >= 0; --layer_idx)
+    for (int64_t layer_idx = net->num_layers - 3; layer_idx >= 0; --layer_idx)
     {
         // get input for sigmoid function of current layer
         arma::fmat sp = sigmoid_prime(zs[layer_idx]);
         // calculate error for current layer with error from layer to the right (BP2)
-        error = (m_weights[layer_idx + 1].t() * error) % sp;
+        error = (net->weights[layer_idx + 1].t() * error) % sp;
 
         // update gradient like with last layer
         nabla_b[layer_idx] += arma::sum(error, 1);
