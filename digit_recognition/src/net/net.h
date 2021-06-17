@@ -23,20 +23,18 @@ struct Network
     std::shared_ptr<Cost> cost;
 };
 
-// todo: fix
-// std::string Network::to_str() const
-// {
-//     std::stringstream buffer;
-//     buffer << "<Network: sizes: ";
-//     for (size_t size : m_sizes)
-//         buffer << size << " ";
-//     buffer << std::endl
-//            << "biases:" << std::endl;
-//     for (const arma::fvec& bias : m_biases)
-//         buffer << bias.n_rows << " " << bias.n_cols << std::endl;
-//     buffer << "weights:" << std::endl;
-//     for (const arma::fmat& weight : m_weights)
-//         buffer << weight.n_rows << " " << weight.n_cols << std::endl;
-//     buffer << ">";
-//     return buffer.str();
-// }
+inline std::ostream& operator<<(std::ostream& out, const Network& net)
+{
+    out << "<Network: sizes: ";
+    for (size_t size : net.sizes)
+        out << size << " ";
+    out << std::endl
+        << "biases:" << std::endl;
+    for (const arma::fvec& bias : net.biases)
+        out << bias.n_rows << " " << bias.n_cols << std::endl;
+    out << "weights:" << std::endl;
+    for (const arma::fmat& weight : net.weights)
+        out << weight.n_rows << " " << weight.n_cols << std::endl;
+    out << ">";
+    return out;
+}

@@ -4,7 +4,7 @@
 
 #include <random>
 
-size_t total_accuracy(const Network* net, const Data* data) const
+size_t total_accuracy(const Network* net, const Data* data)
 {
     size_t sum = 0;
     // go over all data sets
@@ -12,7 +12,7 @@ size_t total_accuracy(const Network* net, const Data* data) const
     {
         arma::subview<float> x = data->get_x().col(i);
         arma::subview<float> y = data->get_y().col(i);
-        arma::fvec           a = feedforward(x);
+        arma::fvec           a = feedforward(net, x);
 
         // determine highest confidences
         float  highest_correct_confidence;
@@ -42,7 +42,7 @@ size_t total_accuracy(const Network* net, const Data* data) const
     return sum;
 }
 
-float total_cost(const Network* net, const Data* data, float lambda_l1, float lambda_l2) const
+float total_cost(const Network* net, const Data* data, float lambda_l1, float lambda_l2)
 {
     float cost = 0.0f;
     // go over all data sets
@@ -50,7 +50,7 @@ float total_cost(const Network* net, const Data* data, float lambda_l1, float la
     {
         arma::subview<float> x = data->get_x().col(i);
         arma::subview<float> y = data->get_y().col(i);
-        arma::fvec           a = feedforward(x);
+        arma::fvec           a = feedforward(net, x);
 
         cost += net->cost->fn(a, y);
     }
@@ -87,7 +87,7 @@ float total_cost(const Network* net, const Data* data, float lambda_l1, float la
     return cost;
 }
 
-arma::fmat feedforward(const Network* net, arma::fmat a) const
+arma::fmat feedforward(const Network* net, arma::fmat a)
 {
     // loop over each layer
     for (size_t left_layer_idx = 0; left_layer_idx < net->num_layers - 1; ++left_layer_idx)
@@ -99,16 +99,16 @@ arma::fmat feedforward(const Network* net, arma::fmat a) const
     return a;
 }
 
-void sgd(const Network* net,
-         const Data*    training_data,
-         size_t         epochs,
-         size_t         mini_batch_size,
-         float          eta,
-         float          mu,
-         float          lambda_l1,
-         float          lambda_l2,
-         const Data*    eval_data,
-         LearnCFG*      learn_cfg)
+void sgd(Network*    net,
+         const Data* training_data,
+         size_t      epochs,
+         size_t      mini_batch_size,
+         float       eta,
+         float       mu,
+         float       lambda_l1,
+         float       lambda_l2,
+         const Data* eval_data,
+         LearnCFG*   learn_cfg)
 {
     size_t n = training_data->get_x().n_cols;
     // info block
@@ -137,7 +137,8 @@ void sgd(const Network* net,
         {
             // make last batch smaller if necessary
             size_t length = offset + mini_batch_size >= n ? n - offset : mini_batch_size;
-            update_mini_batch(this_training_data.get_mini_x(offset, length),
+            update_mini_batch(net,
+                              this_training_data.get_mini_x(offset, length),
                               this_training_data.get_mini_y(offset, length),
                               eta,
                               mu,
@@ -155,7 +156,7 @@ void sgd(const Network* net,
                 // only when eval_data is given
                 if (eval_data == nullptr)
                     raise_error("evaluation data is required for requested monitoring");
-                float cost = total_cost(eval_data, lambda_l1, lambda_l2);
+                float cost = total_cost(net, eval_data, lambda_l1, lambda_l2);
                 learn_cfg->eval_costs.push_back(cost);
                 std::cout << "  \tCost on evaluation data: " << cost;
             }
@@ -163,7 +164,7 @@ void sgd(const Network* net,
             {
                 if (eval_data == nullptr)
                     raise_error("evaluation data is required for requested monitoring");
-                float accuracy = total_accuracy(eval_data);
+                float accuracy = total_accuracy(net, eval_data);
                 learn_cfg->eval_accuracies.push_back(accuracy);
                 size_t n_eval = eval_data->get_y().n_cols;
                 std::cout << "  \tAccuracy on evaluation data: " << accuracy << " / " << n_eval;
@@ -171,13 +172,13 @@ void sgd(const Network* net,
 
             if (learn_cfg->monitor_train_cost)
             {
-                float cost = total_cost(training_data, lambda_l1, lambda_l2);
+                float cost = total_cost(net, training_data, lambda_l1, lambda_l2);
                 learn_cfg->train_costs.push_back(cost);
                 std::cout << "  \tCost on training data: " << cost;
             }
             if (learn_cfg->monitor_train_accuracy)
             {
-                float accuracy = total_accuracy(training_data);
+                float accuracy = total_accuracy(net, training_data);
                 learn_cfg->train_accuracies.push_back(accuracy);
                 std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
             }
@@ -186,7 +187,7 @@ void sgd(const Network* net,
     }
 }
 
-void update_mini_batch(cosnt Network*             net,
+void update_mini_batch(Network*                   net,
                        const arma::subview<float> x,
                        const arma::subview<float> y,
                        float                      eta,
@@ -210,7 +211,7 @@ void update_mini_batch(cosnt Network*             net,
     // use backprop to calculate gradient -> de-/increase delta
     // use matrix or multiple vectors
 #if 1
-    backprop(x, y, nabla_b, nabla_w);
+    backprop(net, x, y, nabla_b, nabla_w);
 #else
     for (size_t idx = 0; idx < x.n_cols; ++idx)
     {
@@ -250,7 +251,7 @@ void backprop(const Network*             net,
               const arma::subview<float> x,
               const arma::subview<float> y,
               std::vector<arma::fvec>&   nabla_b,
-              std::vector<arma::fmat>&   nabla_w) const
+              std::vector<arma::fmat>&   nabla_w)
 {
     // activations layer by layer <- needed by backprop algorithm
     // one per layer

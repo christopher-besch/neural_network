@@ -72,10 +72,10 @@ int main(int argc, const char* argv[])
 
     // set monitoring
     LearnCFG learn_cfg;
-    learn_cfg.monitor_eval_cost      = false;
+    learn_cfg.monitor_eval_cost      = true;
     learn_cfg.monitor_eval_accuracy  = true;
-    learn_cfg.monitor_train_cost     = false;
-    learn_cfg.monitor_train_accuracy = false;
+    learn_cfg.monitor_train_cost     = true;
+    learn_cfg.monitor_train_accuracy = true;
 
     // learn network
     sgd(net,
