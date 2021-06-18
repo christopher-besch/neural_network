@@ -1,6 +1,5 @@
 #pragma once
 #include "data.h"
-#include "learn_cfg.h"
 #include "net.h"
 #include "pch.h"
 
@@ -17,24 +16,7 @@ float total_cost(const Network* net, const Data* data, float lambda_l1, float la
 arma::fmat feedforward(const Network* net, arma::fmat a);
 
 // stochastic gradient descent
-// eta = learning rate
-// no_improvement_in = half eta after not improving in that many epochs; use 0 to disable
-// epochs will be ignored if no_imrpvement_in given
-// mu = momentum co-efficient
-// lambda = regularization parameter
-void sgd(Network*    net,
-         const Data* training_data,
-         size_t      epochs,
-         size_t      mini_batch_size,
-         float       eta,
-         size_t      no_improvement_in = 0,
-         float       mu                = 0.0f,
-         float       lambda_l1         = 0.0f,
-         float       lambda_l2         = 0.0f,
-         // monitoring -> slow
-         const Data* test_data = nullptr,
-         // set and store monitoring
-         LearnCFG* learn_cfg = nullptr);
+void sgd(Network* net, HyperParameter& hy);
 
 // update weights and biases
 // eta = learning rate

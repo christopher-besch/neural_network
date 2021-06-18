@@ -99,123 +99,114 @@ arma::fmat feedforward(const Network* net, arma::fmat a)
     return a;
 }
 
-void sgd(Network*    net,
-         const Data* training_data,
-         size_t      epochs,
-         size_t      mini_batch_size,
-         float       eta,
-         size_t      no_improvement_in,
-         float       mu,
-         float       lambda_l1,
-         float       lambda_l2,
-         const Data* test_data,
-         LearnCFG*   learn_cfg)
+void sgd(Network* net, HyperParameter& hy)
 {
-    size_t n = training_data->get_x().n_cols;
+    if (!hy.is_valid())
+        raise_error("Some required hyper parameters are not set.");
+    // current eta may get changed over time
+    float  eta      = hy.init_eta;
+    float  stop_eta = hy.init_eta / hy.stop_eta_fraction;
+    size_t n        = hy.training_data->get_x().n_cols;
     // info block
     std::cout << "Using stochastic gradient descent:" << std::endl;
-    std::cout << "\tepochs: " << epochs << std::endl;
-    std::cout << "\tmini batch size: " << mini_batch_size << std::endl;
-    std::cout << "\teta: " << eta << std::endl;
-    std::cout << "\tmu: " << mu << std::endl;
-    std::cout << "\ttraining set size: " << n << std::endl;
-    if (test_data != nullptr)
-        std::cout << "\tusing test data of size: " << test_data->get_x().n_cols << std::endl;
-    else
-        std::cout << "\tusing no test data" << std::endl;
-    if (lambda_l1)
-        std::cout << "\tusing L1 regularization with lambda: " << lambda_l1 << std::endl;
-    if (lambda_l2)
-        std::cout << "\tusing L2 regularization with lambda: " << lambda_l2 << std::endl;
+    std::cout << hy;
 
-    bool quit = false;
     // go over epochs
-    for (size_t e = 0; !quit; ++e)
+    for (size_t e = 0; true; ++e)
     {
-        Data this_training_data = training_data->get_shuffled();
-
+        // learn
+        Data this_training_data = hy.training_data->get_shuffled();
         // go over mini batches
-        for (size_t offset = 0; offset < n; offset += mini_batch_size)
+        for (size_t offset = 0; offset < n; offset += hy.mini_batch_size)
         {
             // make last batch smaller if necessary
-            size_t length = offset + mini_batch_size >= n ? n - offset : mini_batch_size;
+            size_t length = offset + hy.mini_batch_size >= n ? n - offset : hy.mini_batch_size;
             update_mini_batch(net,
                               this_training_data.get_mini_x(offset, length),
                               this_training_data.get_mini_y(offset, length),
                               eta,
-                              mu,
-                              lambda_l1,
-                              lambda_l2,
+                              hy.mu,
+                              hy.lambda_l1,
+                              hy.lambda_l2,
                               n);
         }
 
-        // print report
+        // evaluate status
         std::cout << "Epoch " << e << " training complete";
-        if (learn_cfg != nullptr)
+        if (hy.monitor_test_cost)
         {
-            if (learn_cfg->monitor_test_cost)
-            {
-                // only when test_data is given
-                if (test_data == nullptr)
-                    raise_error("test data is required for requested monitoring");
-                float cost = total_cost(net, test_data, lambda_l1, lambda_l2);
-                learn_cfg->test_costs.push_back(cost);
-                std::cout << "  \tCost on test data: " << cost;
-            }
-            if (learn_cfg->monitor_test_accuracy)
-            {
-                if (test_data == nullptr)
-                    raise_error("test data is required for requested monitoring");
-                float accuracy = total_accuracy(net, test_data);
-                learn_cfg->test_accuracies.push_back(accuracy);
-                size_t n_test = test_data->get_y().n_cols;
-                std::cout << "  \tAccuracy on test data: " << accuracy << " / " << n_test;
-            }
+            // only when test_data is given
+            if (hy.test_data == nullptr)
+                raise_error("Test data is required for requested monitoring.");
+            float cost = total_cost(net, hy.test_data, hy.lambda_l1, hy.lambda_l2);
+            hy.test_costs.push_back(cost);
+            std::cout << "  \tCost on test data: " << cost;
+        }
+        if (hy.monitor_test_accuracy)
+        {
+            if (hy.test_data == nullptr)
+                raise_error("Test data is required for requested monitoring.");
+            float accuracy = total_accuracy(net, hy.test_data);
+            hy.test_accuracies.push_back(accuracy);
+            size_t n_test = hy.test_data->get_y().n_cols;
+            std::cout << "  \tAccuracy on test data: " << accuracy << " / " << n_test;
+        }
 
-            if (learn_cfg->monitor_train_cost)
-            {
-                float cost = total_cost(net, training_data, lambda_l1, lambda_l2);
-                learn_cfg->train_costs.push_back(cost);
-                std::cout << "  \tCost on training data: " << cost;
-            }
-            if (learn_cfg->monitor_train_accuracy)
-            {
-                float accuracy = total_accuracy(net, training_data);
-                learn_cfg->train_accuracies.push_back(accuracy);
-                std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
-            }
+        if (hy.monitor_train_cost)
+        {
+            float cost = total_cost(net, hy.training_data, hy.lambda_l1, hy.lambda_l2);
+            hy.train_costs.push_back(cost);
+            std::cout << "  \tCost on training data: " << cost;
+        }
+        if (hy.monitor_train_accuracy)
+        {
+            float accuracy = total_accuracy(net, hy.training_data);
+            hy.train_accuracies.push_back(accuracy);
+            std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
         }
         std::cout << std::endl;
 
         // learning rate schedule
-        if (no_improvement_in)
+        if (hy.no_improvement_in)
         {
-            if (test_data == nullptr)
-                raise_error("Test data is required for early stopping / learning rate schedule.");
-            if (!learn_cfg->monitor_test_accuracy)
-                raise_error("The test data accuracy has to be monitored for early stopping / learning rate schedule.");
-            if (no_improvement_in < 2)
+            if (hy.test_data == nullptr)
+                raise_error("Test data is required for early stopping and learning rate schedule.");
+            if (!hy.monitor_test_accuracy)
+                raise_error("The test data accuracy has to be monitored for early stopping and learning rate schedule.");
+            if (hy.no_improvement_in < 2)
                 raise_error("no_improvement_in has to be at least two.");
             // when there aren't enough epochs yet, don't do anything
-            if (e >= no_improvement_in)
+            if (e >= hy.no_improvement_in)
             {
                 // sum up deltas between values
-                size_t n_values   = learn_cfg->test_accuracies.size();
+                size_t n_values   = hy.test_accuracies.size();
                 float  sum_delta  = 0.0f;
-                float  last_value = learn_cfg->test_accuracies[n_values - no_improvement_in];
-                for (int i = last_value - (no_improvement_in - 1); i < n_values; ++i)
+                float  last_value = hy.test_accuracies[n_values - hy.no_improvement_in];
+                for (int i = last_value - (hy.no_improvement_in - 1); i < n_values; ++i)
                 {
-                    float current_value = learn_cfg->test_accuracies[i];
+                    float current_value = hy.test_accuracies[i];
                     sum_delta += current_value - last_value;
                     last_value = current_value;
                 }
                 // no improvement?
                 if (sum_delta < 0.0f)
+                {
+                    std::cout << "no improvement in last " << hy.no_improvement_in << " epochs; reducing learning rate to half." << std::endl;
                     eta /= 2;
+
+                    if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
+                    {
+                        std::cout << "Learning rate dropped below 1/" << hy.stop_eta_fraction << "; learning terminated." << std::endl;
+                        return;
+                    }
+                }
             }
         }
-        else
-            quit = !(e < epochs);
+        if (e >= hy.max_epochs)
+        {
+            std::cout << "Maximum epochs exceeded; learning terminated" << std::endl;
+            return;
+        }
     }
 }
 

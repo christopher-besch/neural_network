@@ -46,24 +46,24 @@ int main(int argc, const char* argv[])
     Network* net = create_network({ 784, 100, 10 }, Cost::get("cross_entropy"));
 
     // set monitoring
-    LearnCFG learn_cfg;
-    learn_cfg.monitor_test_cost      = true;
-    learn_cfg.monitor_test_accuracy  = true;
-    learn_cfg.monitor_train_cost     = true;
-    learn_cfg.monitor_train_accuracy = true;
+    HyperParameter hy;
+    hy.mini_batch_size        = 10;
+    hy.init_eta               = 0.1f;
+    hy.max_epochs             = 30;
+    hy.stop_eta_fraction      = -1.0f;
+    hy.no_improvement_in      = 0;
+    hy.mu                     = 0.0f;
+    hy.lambda_l1              = 0.0f;
+    hy.lambda_l2              = 5.0f;
+    hy.training_data          = &training_data;
+    hy.test_data              = &test_data;
+    hy.monitor_test_cost      = true;
+    hy.monitor_test_accuracy  = true;
+    hy.monitor_train_cost     = true;
+    hy.monitor_train_accuracy = true;
 
     // learn network
-    sgd(net,
-        &training_data,
-        30,   // epochs
-        10,   // mini_batch_size
-        0.1f, // eta
-        0,
-        0.7f, // mu
-        0.0f, // lambda for L1 regularization
-        5.0f, // lambda for L2 regularization
-        &test_data,
-        &learn_cfg);
+    sgd(net, hy);
     save_json(net, "out_net.json");
 
     delete net;
