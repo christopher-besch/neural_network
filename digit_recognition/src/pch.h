@@ -4,7 +4,6 @@
 
 using json = nlohmann::json;
 
-#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <string>

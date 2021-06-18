@@ -128,8 +128,9 @@ void sgd(Network*    net,
     if (lambda_l2)
         std::cout << "\tusing L2 regularization with lambda: " << lambda_l2 << std::endl;
 
+    bool quit = false;
     // go over epochs
-    for (size_t e = 0; e < epochs; ++e)
+    for (size_t e = 0; !quit; ++e)
     {
         Data this_training_data = training_data->get_shuffled();
 
@@ -190,8 +191,31 @@ void sgd(Network*    net,
         if (no_improvement_in)
         {
             if (test_data == nullptr)
-                raise_error("test data is required for requested monitoring");
+                raise_error("Test data is required for early stopping / learning rate schedule.");
+            if (!learn_cfg->monitor_test_accuracy)
+                raise_error("The test data accuracy has to be monitored for early stopping / learning rate schedule.");
+            if (no_improvement_in < 2)
+                raise_error("no_improvement_in has to be at least two.");
+            // when there aren't enough epochs yet, don't do anything
+            if (e >= no_improvement_in)
+            {
+                // sum up deltas between values
+                size_t n_values   = learn_cfg->test_accuracies.size();
+                float  sum_delta  = 0.0f;
+                float  last_value = learn_cfg->test_accuracies[n_values - no_improvement_in];
+                for (int i = last_value - (no_improvement_in - 1); i < n_values; ++i)
+                {
+                    float current_value = learn_cfg->test_accuracies[i];
+                    sum_delta += current_value - last_value;
+                    last_value = current_value;
+                }
+                // no improvement?
+                if (sum_delta < 0.0f)
+                    eta /= 2;
+            }
         }
+        else
+            quit = !(e < epochs);
     }
 }
 
