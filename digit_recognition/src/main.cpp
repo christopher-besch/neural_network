@@ -43,7 +43,8 @@ int main(int argc, const char* argv[])
     begin = std::chrono::high_resolution_clock::now();
 
 #if 1
-    Network* net = create_network({ 784, 20, 10 }, Cost::get("cross_entropy"));
+    Network net;
+    create_network(net, { 784, 20, 10 }, Cost::get("cross_entropy"));
 
     // set monitoring
     HyperParameter hy;
@@ -65,8 +66,6 @@ int main(int argc, const char* argv[])
     // learn network
     sgd(net, hy);
     save_json(net, "out_net.json");
-
-    delete net;
 #else
     // switched
     Network* net = create_network({ 10, 30, 784 }, Cost::get("cross_entropy"));
