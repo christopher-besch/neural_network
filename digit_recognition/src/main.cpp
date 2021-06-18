@@ -43,24 +43,24 @@ int main(int argc, const char* argv[])
     begin = std::chrono::high_resolution_clock::now();
 
 #if 1
-    Network* net = create_network({ 784, 100, 10 }, Cost::get("cross_entropy"));
+    Network* net = create_network({ 784, 20, 10 }, Cost::get("cross_entropy"));
 
     // set monitoring
     HyperParameter hy;
     hy.mini_batch_size        = 10;
     hy.init_eta               = 0.1f;
     hy.max_epochs             = 30;
-    hy.stop_eta_fraction      = -1.0f;
-    hy.no_improvement_in      = 0;
+    hy.stop_eta_fraction      = 128.0f;
+    hy.no_improvement_in      = 10;
     hy.mu                     = 0.0f;
     hy.lambda_l1              = 0.0f;
     hy.lambda_l2              = 5.0f;
     hy.training_data          = &training_data;
     hy.test_data              = &test_data;
-    hy.monitor_test_cost      = true;
+    hy.monitor_test_cost      = false;
     hy.monitor_test_accuracy  = true;
-    hy.monitor_train_cost     = true;
-    hy.monitor_train_accuracy = true;
+    hy.monitor_train_cost     = false;
+    hy.monitor_train_accuracy = false;
 
     // learn network
     sgd(net, hy);

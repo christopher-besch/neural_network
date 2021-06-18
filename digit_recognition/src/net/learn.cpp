@@ -99,20 +99,60 @@ arma::fmat feedforward(const Network* net, arma::fmat a)
     return a;
 }
 
+void update_learn_status(const Network* net, HyperParameter& hy)
+{
+    // evaluate status
+    if (hy.monitor_test_cost)
+    {
+        // only when test_data is given
+        if (hy.test_data == nullptr)
+            raise_error("Test data is required for requested monitoring.");
+        float cost = total_cost(net, hy.test_data, hy.lambda_l1, hy.lambda_l2);
+        hy.test_costs.push_back(cost);
+        std::cout << "  \tCost on test data: " << cost;
+    }
+    if (hy.monitor_test_accuracy)
+    {
+        if (hy.test_data == nullptr)
+            raise_error("Test data is required for requested monitoring.");
+        float accuracy = total_accuracy(net, hy.test_data);
+        hy.test_accuracies.push_back(accuracy);
+        size_t n_test = hy.test_data->get_y().n_cols;
+        std::cout << "  \tAccuracy on test data: " << accuracy << " / " << n_test;
+    }
+
+    if (hy.monitor_train_cost)
+    {
+        float cost = total_cost(net, hy.training_data, hy.lambda_l1, hy.lambda_l2);
+        hy.train_costs.push_back(cost);
+        std::cout << "  \tCost on training data: " << cost;
+    }
+    if (hy.monitor_train_accuracy)
+    {
+        float accuracy = total_accuracy(net, hy.training_data);
+        hy.train_accuracies.push_back(accuracy);
+        std::cout << "  \tAccuracy on training data: " << accuracy << " / " << hy.training_data->get_x().n_cols;
+    }
+    std::cout << std::endl;
+}
+
 void sgd(Network* net, HyperParameter& hy)
 {
-    if (!hy.is_valid())
-        raise_error("Some required hyper parameters are not set.");
+    hy.is_valid();
     // current eta may get changed over time
-    float  eta      = hy.init_eta;
-    float  stop_eta = hy.init_eta / hy.stop_eta_fraction;
+    float eta = hy.init_eta;
+    // don't divide by 0
+    float  stop_eta = hy.stop_eta_fraction ? hy.init_eta / hy.stop_eta_fraction : 0;
     size_t n        = hy.training_data->get_x().n_cols;
     // info block
     std::cout << "Using stochastic gradient descent:" << std::endl;
     std::cout << hy;
 
+    size_t epoch = 0;
+    // gets reset after reducing eta
+    size_t epochs_since_last_reduction = 0;
     // go over epochs
-    for (size_t e = 0; true; ++e)
+    while (true)
     {
         // learn
         Data this_training_data = hy.training_data->get_shuffled();
@@ -130,59 +170,20 @@ void sgd(Network* net, HyperParameter& hy)
                               hy.lambda_l2,
                               n);
         }
-
-        // evaluate status
-        std::cout << "Epoch " << e << " training complete";
-        if (hy.monitor_test_cost)
-        {
-            // only when test_data is given
-            if (hy.test_data == nullptr)
-                raise_error("Test data is required for requested monitoring.");
-            float cost = total_cost(net, hy.test_data, hy.lambda_l1, hy.lambda_l2);
-            hy.test_costs.push_back(cost);
-            std::cout << "  \tCost on test data: " << cost;
-        }
-        if (hy.monitor_test_accuracy)
-        {
-            if (hy.test_data == nullptr)
-                raise_error("Test data is required for requested monitoring.");
-            float accuracy = total_accuracy(net, hy.test_data);
-            hy.test_accuracies.push_back(accuracy);
-            size_t n_test = hy.test_data->get_y().n_cols;
-            std::cout << "  \tAccuracy on test data: " << accuracy << " / " << n_test;
-        }
-
-        if (hy.monitor_train_cost)
-        {
-            float cost = total_cost(net, hy.training_data, hy.lambda_l1, hy.lambda_l2);
-            hy.train_costs.push_back(cost);
-            std::cout << "  \tCost on training data: " << cost;
-        }
-        if (hy.monitor_train_accuracy)
-        {
-            float accuracy = total_accuracy(net, hy.training_data);
-            hy.train_accuracies.push_back(accuracy);
-            std::cout << "  \tAccuracy on training data: " << accuracy << " / " << n;
-        }
-        std::cout << std::endl;
+        std::cout << "Epoch " << epoch << " training complete" << std::endl;
+        update_learn_status(net, hy);
 
         // learning rate schedule
         if (hy.no_improvement_in)
         {
-            if (hy.test_data == nullptr)
-                raise_error("Test data is required for early stopping and learning rate schedule.");
-            if (!hy.monitor_test_accuracy)
-                raise_error("The test data accuracy has to be monitored for early stopping and learning rate schedule.");
-            if (hy.no_improvement_in < 2)
-                raise_error("no_improvement_in has to be at least two.");
             // when there aren't enough epochs yet, don't do anything
-            if (e >= hy.no_improvement_in)
+            if (epochs_since_last_reduction >= hy.no_improvement_in)
             {
                 // sum up deltas between values
                 size_t n_values   = hy.test_accuracies.size();
                 float  sum_delta  = 0.0f;
                 float  last_value = hy.test_accuracies[n_values - hy.no_improvement_in];
-                for (int i = last_value - (hy.no_improvement_in - 1); i < n_values; ++i)
+                for (int i = n_values - (hy.no_improvement_in - 1); i < n_values; ++i)
                 {
                     float current_value = hy.test_accuracies[i];
                     sum_delta += current_value - last_value;
@@ -191,8 +192,10 @@ void sgd(Network* net, HyperParameter& hy)
                 // no improvement?
                 if (sum_delta < 0.0f)
                 {
-                    std::cout << "no improvement in last " << hy.no_improvement_in << " epochs; reducing learning rate to half." << std::endl;
                     eta /= 2;
+                    // reset
+                    epochs_since_last_reduction = 0;
+                    std::cout << "No improvement in last " << hy.no_improvement_in << " epochs; reducing learning rate to: " << eta << std::endl;
 
                     if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
                     {
@@ -202,11 +205,13 @@ void sgd(Network* net, HyperParameter& hy)
                 }
             }
         }
-        if (e >= hy.max_epochs)
+        if (epoch >= hy.max_epochs)
         {
             std::cout << "Maximum epochs exceeded; learning terminated" << std::endl;
             return;
         }
+        ++epoch;
+        ++epochs_since_last_reduction;
     }
 }
 
