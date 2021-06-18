@@ -78,8 +78,16 @@ struct HyperParameter
         test_costs, test_accuracies,
         train_costs, train_accuracies;
 
+    void reset_results()
+    {
+        test_costs.resize(0);
+        test_accuracies.resize(0);
+        train_costs.resize(0);
+        train_accuracies.resize(0);
+    }
+
     // check if required parameters are given
-    void is_valid()
+    void is_valid() const
     {
         if (no_improvement_in)
         {
