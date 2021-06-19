@@ -10,3 +10,4 @@ using json = nlohmann::json;
 #include <vector>
 
 #include "utils.h"
+#include "vector_operations.h"

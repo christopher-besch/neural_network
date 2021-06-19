@@ -1,10 +1,17 @@
 #pragma once
+#include "learn.h"
 #include "net.h"
 #include "pch.h"
 
-// has to receive at least one element
-bool strictly_monotone_decreasing(std::vector<float> values);
+inline void test(const Network& net, HyperParameter& hy)
+{
+    Network current_net = net;
+    hy.reset_results();
+    sgd(current_net, hy);
+}
 
+// do everything in the surfers power to create the best vlaues for the hyper parameters possible
+// manual optimization is gernerally better but these values can be used as a starting point
 void hyper_surf(const Network& net, HyperParameter& hy);
 
 // find order of magnitude of initial eta

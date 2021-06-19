@@ -86,16 +86,16 @@ public:
     }
 
     // reduce size of data
-    Data get_sub(size_t new_size) const
+    Data get_sub(size_t offset, size_t length) const
     {
-        if (new_size > m_data.n_cols)
-            raise_error("Can't reduce size of data above current");
-        return { m_data.cols(0, new_size - 1), m_x_size, m_y_size };
+        if (offset + length > m_data.n_cols)
+            raise_error("Requested sub data is invlaid.");
+        return { m_data.cols(offset, offset + length - 1), m_x_size, m_y_size };
     }
-    void sub(size_t new_size)
+    void sub(size_t offset, size_t length)
     {
-        if (new_size > m_data.n_cols)
-            raise_error("Can't reduce size of data above current");
-        m_data = m_data.cols(0, new_size - 1);
+        if (offset + length > m_data.n_cols)
+            raise_error("Requested sub data is invlaid.");
+        m_data = m_data.cols(offset, offset + length - 1);
     }
 };

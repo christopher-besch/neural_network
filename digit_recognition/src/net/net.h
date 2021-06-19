@@ -58,6 +58,7 @@ struct HyperParameter
     // ignored if learning rate schedule disabled
     float stop_eta_fraction = 0.0f;
     // momentum co-efficient
+    // 0 -> full friction, like without momentum
     float mu = 0.0f;
     // regularization parameter
     float lambda_l1 = 0.0f;
@@ -153,7 +154,7 @@ inline std::ostream& operator<<(std::ostream& out, const HyperParameter& hy)
             out << "\tStopping early when eta drops below: 1/" << hy.stop_eta_fraction << std::endl;
     }
     else
-        out << "\teta: " << hy.init_eta << std::endl;
+        out << "\tusing constant eta: " << hy.init_eta << std::endl;
     out << "\tstop at max epochs: " << hy.max_epochs << std::endl;
 
     out << "\tmu: " << hy.mu << std::endl;

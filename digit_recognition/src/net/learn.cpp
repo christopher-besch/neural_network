@@ -147,6 +147,10 @@ void update_learn_status(const Network& net, HyperParameter& hy)
 
 void sgd(Network& net, HyperParameter& hy)
 {
+    // info block
+    std::cout << "Using stochastic gradient descent:" << std::endl;
+    std::cout << hy;
+
     auto begin = std::chrono::high_resolution_clock::now();
     hy.is_valid();
     // current eta may get changed over time
@@ -154,9 +158,6 @@ void sgd(Network& net, HyperParameter& hy)
     // don't divide by 0
     float  stop_eta = hy.stop_eta_fraction ? hy.init_eta / hy.stop_eta_fraction : 0;
     size_t n        = hy.training_data->get_x().n_cols;
-    // info block
-    std::cout << "Using stochastic gradient descent:" << std::endl;
-    std::cout << hy;
 
     size_t epoch = 0;
     // gets reset after reducing eta
@@ -187,23 +188,14 @@ void sgd(Network& net, HyperParameter& hy)
         // when there aren't enough epochs yet, don't do anything
         if (hy.no_improvement_in && epochs_since_last_reduction >= hy.no_improvement_in)
         {
-            // sum up deltas between values
-            size_t n_values   = hy.test_accuracies.size();
-            float  sum_delta  = 0.0f;
-            float  last_value = hy.test_accuracies[n_values - hy.no_improvement_in];
-            for (int i = n_values - (hy.no_improvement_in - 1); i < n_values; ++i)
-            {
-                float current_value = hy.test_accuracies[i];
-                sum_delta += current_value - last_value;
-                last_value = current_value;
-            }
+            float sum_delta = get_sum_delta(hy.test_accuracies.end() - hy.no_improvement_in, hy.test_accuracies.end());
             // no improvement?
             if (sum_delta < 0.0f)
             {
                 eta /= 2;
                 // reset
                 epochs_since_last_reduction = 0;
-                std::cout << "No improvement in last " << hy.no_improvement_in << " epochs; reducing learning rate to: " << eta << std::endl;
+                std::cout << "No improvement (" << sum_delta << ") in last " << hy.no_improvement_in << " epochs; reducing learning rate to: " << eta << std::endl;
 
                 if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
                 {
@@ -211,6 +203,8 @@ void sgd(Network& net, HyperParameter& hy)
                     return;
                 }
             }
+            else
+                std::cout << "test accuracy improvement in last " << hy.no_improvement_in << " epochs: " << sum_delta << std::endl;
         }
         if (epoch >= hy.max_epochs)
         {

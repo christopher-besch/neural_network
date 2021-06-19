@@ -32,9 +32,10 @@ int main(int argc, const char* argv[])
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
 
-    Data training_data = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
+    Data big_data      = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
     Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
-    training_data.sub(50000);
+    Data training_data = big_data.get_sub(0, 50000);
+    Data eval_data     = big_data.get_sub(50000, 10000);
 
     // x and y switched
     Data switched_training_data = training_data.get_switched();
@@ -43,21 +44,21 @@ int main(int argc, const char* argv[])
 
 #if 1
     Network net;
-    create_network(net, { 784, 20, 10 }, Cost::get("cross_entropy"));
+    create_network(net, { 784, 10, 10 }, Cost::get("cross_entropy"));
 
     // set monitoring
     HyperParameter hy;
-    hy.mini_batch_size   = 10;
-    hy.init_eta          = 0.1f;
-    hy.max_epochs        = 30;
-    hy.stop_eta_fraction = 128.0f;
-    hy.no_improvement_in = 10;
-    hy.mu                = 0.0f;
-    hy.lambda_l1         = 0.0f;
-    hy.lambda_l2         = 5.0f;
-    hy.training_data     = &training_data;
-    hy.test_data         = &test_data;
-    hy.eval_data         = nullptr;
+    // hy.mini_batch_size = 10;
+    // hy.init_eta          = 0.1f;
+    // hy.max_epochs        = 1000;
+    // hy.stop_eta_fraction = 128.0f;
+    // hy.no_improvement_in = 10;
+    // hy.mu                = 0.0f;
+    // hy.lambda_l1         = 0.0f;
+    // hy.lambda_l2         = 5.0f;
+    hy.training_data = &training_data;
+    hy.test_data     = &test_data;
+    hy.eval_data     = &eval_data;
 
     hyper_surf(net, hy);
 
