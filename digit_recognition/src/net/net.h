@@ -46,10 +46,10 @@ struct HyperParameter
     size_t mini_batch_size = 0;
     // start learning rate
     float init_eta = 0.0f;
-    // stop after these epchs regardless of any schedule
-    size_t max_epochs = 0;
 
     // optional
+    // stop after these epchs regardless of any schedule
+    size_t max_epochs = 200;
     // half eta after not improving in that many epochs
     // must be at least 2
     // 0 -> disable
@@ -69,7 +69,6 @@ struct HyperParameter
     const Data* eval_data     = nullptr;
 
     // run time
-    float     eta                    = -1.0f;
     bool      monitor_test_cost      = false;
     bool      monitor_test_accuracy  = false;
     bool      monitor_eval_cost      = false;
@@ -125,8 +124,6 @@ struct HyperParameter
             raise_error("mini_batch_size needs to be defined");
         if (!init_eta)
             raise_error("init_eta needs to be defined");
-        if (!max_epochs)
-            raise_error("max_epochs needs to be defined");
         if (training_data == nullptr)
             raise_error("training_data needs to be given");
     }

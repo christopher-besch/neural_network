@@ -44,10 +44,10 @@ int main(int argc, const char* argv[])
 
 #if 1
     Network net;
-    create_network(net, { 784, 10, 10 }, Cost::get("cross_entropy"));
+    create_network(net, { 784, 5, 10 }, Cost::get("cross_entropy"));
 
     // set monitoring
-    HyperParameter hy;
+    // HyperParameter hy;
     // hy.mini_batch_size = 10;
     // hy.init_eta          = 0.1f;
     // hy.max_epochs        = 1000;
@@ -56,11 +56,23 @@ int main(int argc, const char* argv[])
     // hy.mu                = 0.0f;
     // hy.lambda_l1         = 0.0f;
     // hy.lambda_l2         = 5.0f;
-    hy.training_data = &training_data;
-    hy.test_data     = &test_data;
-    hy.eval_data     = &eval_data;
+
+    HyperParameter hy;
+    hy.no_improvement_in = 10;
+    hy.stop_eta_fraction = 512.0f;
+    hy.lambda_l1         = 0.0f;
+    hy.training_data     = &training_data;
+    hy.test_data         = &test_data;
+    hy.eval_data         = &eval_data;
 
     hyper_surf(net, hy);
+    // hy.init_eta          = 0.5f;
+    // hy.lambda_l2         = 0.166016f;
+    // hy.mu                = 0.482056f;
+    // hy.mini_batch_size   = 50;
+    // hy.no_improvement_in = 0.0f;
+    // default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 2.0f, hy.init_eta * 2.0f, 10, 4);
+
 
     hy.monitor_test_cost      = false;
     hy.monitor_test_accuracy  = true;
@@ -70,8 +82,8 @@ int main(int argc, const char* argv[])
     hy.monitor_train_accuracy = false;
 
     // learn network
-    sgd(net, hy);
-    save_json(net, "out_net.json");
+    // sgd(net, hy);
+    // save_json(net, "out_net.json");
 #else
     // switched
     Network* net = create_network({ 10, 30, 784 }, Cost::get("cross_entropy"));

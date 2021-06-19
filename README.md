@@ -22,7 +22,7 @@ Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnet
 - order of magnitude: start with 0.01, multiply or divide by 10
 - fine tune: compare multiple values directly above found magnitude
 - iterate a few times
-- use early stopping or half threshold
+- use early stopping or half threshold as constant value
 
 ## Lambda
 - validation accuracy
@@ -33,6 +33,11 @@ Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnet
 - fine tune as with eta
 - re-optimize eta
 - bouncing with eta
+
+## Momentum co-efficient
+- same as lambda
+- but order of magnitude already known, [0; 1]
+- bounce with eta and lambda
 
 ## Mini-Batch Size
 - roughly optimize other hyper-parameters
