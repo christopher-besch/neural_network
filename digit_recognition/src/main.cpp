@@ -41,10 +41,13 @@ int main(int argc, const char* argv[])
     Data switched_training_data = training_data.get_switched();
     Data switched_test_data     = test_data.get_switched();
 
+    Data cp_training_data = training_data.get_sub(0, 3000);
+    Data cp_test_data     = test_data.get_sub(0, 1000);
+    Data cp_eval_data     = eval_data.get_sub(0, 1000);
 
 #if 1
     Network net;
-    create_network(net, { 784, 5, 10 }, Cost::get("cross_entropy"));
+    create_network(net, { 784, 30, 10 }, Cost::get("cross_entropy"));
 
     // set monitoring
     // HyperParameter hy;
@@ -58,22 +61,22 @@ int main(int argc, const char* argv[])
     // hy.lambda_l2         = 5.0f;
 
     HyperParameter hy;
-    hy.no_improvement_in = 10;
+    hy.no_improvement_in = 100;
     hy.stop_eta_fraction = 512.0f;
     hy.lambda_l1         = 0.0f;
-    hy.training_data     = &training_data;
-    hy.test_data         = &test_data;
-    hy.eval_data         = &eval_data;
+    hy.training_data     = &cp_training_data;
+    hy.test_data         = &cp_test_data;
+    hy.eval_data         = &cp_eval_data;
 
     hyper_surf(net, hy);
-    // hy.init_eta          = 0.5f;
-    // hy.lambda_l2         = 0.166016f;
-    // hy.mu                = 0.482056f;
-    // hy.mini_batch_size   = 50;
-    // hy.no_improvement_in = 0.0f;
-    // default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 2.0f, hy.init_eta * 2.0f, 10, 4);
+    // hy.init_eta        = 0.914062f;
+    // hy.lambda_l2       = 15.2344f;
+    // hy.mu              = 0.0f;
+    // hy.mini_batch_size = 305;
 
-
+    hy.training_data          = &training_data;
+    hy.test_data              = &test_data;
+    hy.eval_data              = &eval_data;
     hy.monitor_test_cost      = false;
     hy.monitor_test_accuracy  = true;
     hy.monitor_eval_cost      = false;
@@ -82,8 +85,8 @@ int main(int argc, const char* argv[])
     hy.monitor_train_accuracy = false;
 
     // learn network
-    // sgd(net, hy);
-    // save_json(net, "out_net.json");
+    sgd(net, hy);
+    save_json(net, "out_net.json");
 #else
     // switched
     Network* net = create_network({ 10, 30, 784 }, Cost::get("cross_entropy"));

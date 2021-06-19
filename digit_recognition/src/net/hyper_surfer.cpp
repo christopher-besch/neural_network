@@ -23,9 +23,10 @@ void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs, size_
     std::cout << "// best coarse Lambda for L2 regularization found: " << hy.lambda_l2 << std::endl;
     std::cout << std::endl;
 
-    // todo: mini_batch_size missing
+    mini_batch_size_surf(net, hy);
+    std::cout << std::endl;
 
-    bounce_hyper_surf(net, hy, 10, fine_surfs, surf_depth);
+    bounce_hyper_surf(net, hy, 30, fine_surfs, surf_depth);
 
     // use default options again
     hy.no_improvement_in = no_improvement_in_buffer;
@@ -81,6 +82,53 @@ void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parame
         }
     }
     raise_error("Failed to find order of magnitude for parameter.");
+}
+
+void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t depth)
+{
+    std::cout << "// surfing on mini batch size" << std::endl;
+    hy.reset_monitor();
+    hy.max_epochs = first_epochs;
+
+    // can't be any smaller than online learning or bigger than training data
+    size_t min = 1;
+    size_t max = hy.training_data->get_x().n_cols;
+    for (int i = 0; i < depth; ++i)
+    {
+        size_t middle = hy.mini_batch_size;
+        // between min and middle
+        size_t left_value = middle - (middle - min) / 2;
+        // between middle and max
+        size_t right_value = middle + (max - middle) / 2;
+
+        std::cout << "// evaluate left value for mini batch size" << std::endl;
+        hy.mini_batch_size = left_value;
+        test(net, hy);
+        long long left_time = hy.learn_time;
+
+        std::cout << "// evaluate right value for mini batch size" << std::endl;
+        hy.mini_batch_size = right_value;
+        test(net, hy);
+        long long right_time = hy.learn_time;
+
+        if (left_time < right_time)
+        {
+            min = min;
+            max = middle;
+            std::cout << "// smaller side [" << min << "; " << max << "] is better for mini batch size" << std::endl;
+        }
+        else
+        {
+            min = middle;
+            max = max;
+            std::cout << "// bigger side [" << min << "; " << max << "] is better for mini batch size" << std::endl;
+        }
+        hy.mini_batch_size = min + (max - min) / 2;
+        // only size_t <- fraction not possible
+        if (max - min < 2)
+            break;
+    }
+    std::cout << "// found best mini batch size: " << hy.mini_batch_size << std::endl;
 }
 
 void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta, size_t first_epochs, size_t max_tries)

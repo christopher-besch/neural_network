@@ -12,10 +12,13 @@ inline void test(const Network& net, HyperParameter& hy)
 
 // do everything in the surfers power to create the best vlaues for the hyper parameters possible
 // manual optimization is gernerally better but these values can be used as a starting point
-void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs = 2, size_t surf_depth = 4);
+void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs = 4, size_t surf_depth = 10);
 
 // using eval accuracy to find best order of magnitude of supplied parameter
 void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs = 5, size_t max_tries = 100);
+
+// find mini batch size with least amount of time required
+void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_epochs = 5, size_t depth = 15);
 
 // find order of magnitude of initial eta
 // find threshold of decrease in first epochs

@@ -163,7 +163,8 @@ void sgd(Network& net, HyperParameter& hy)
     // gets reset after reducing eta
     size_t epochs_since_last_reduction = 0;
     // go over epochs
-    while (true)
+    bool quit = false;
+    while (!quit)
     {
         // learn
         Data this_training_data = hy.training_data->get_shuffled();
@@ -200,7 +201,7 @@ void sgd(Network& net, HyperParameter& hy)
                 if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
                 {
                     std::cout << "Learning rate dropped below 1/" << hy.stop_eta_fraction << "; learning terminated." << std::endl;
-                    return;
+                    quit = true;
                 }
             }
             else
@@ -209,7 +210,7 @@ void sgd(Network& net, HyperParameter& hy)
         if (epoch >= hy.max_epochs)
         {
             std::cout << "Maximum epochs exceeded; learning terminated" << std::endl;
-            return;
+            quit = true;
         }
         ++epoch;
         ++epochs_since_last_reduction;
