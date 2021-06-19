@@ -1,6 +1,0 @@
-#!/bin/bash
-set -euo pipefail
-IFS=$' \n\t'
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-
-cppcheck --language=c++ digit_recognition/src/* utils/src/* --quiet
