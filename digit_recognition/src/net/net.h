@@ -50,13 +50,13 @@ struct HyperParameter
     size_t max_epochs = 0;
 
     // optional
-    // 0 -> disabled
-    // ignored if learning rate schedule disabled
-    float stop_eta_fraction = 0.0f;
     // half eta after not improving in that many epochs
     // must be at least 2
     // 0 -> disable
     size_t no_improvement_in = 0;
+    // 0 -> disabled
+    // ignored if learning rate schedule disabled
+    float stop_eta_fraction = 0.0f;
     // momentum co-efficient
     float mu = 0.0f;
     // regularization parameter
@@ -65,17 +65,22 @@ struct HyperParameter
 
     const Data* training_data = nullptr;
     const Data* test_data     = nullptr;
+    const Data* eval_data     = nullptr;
 
     // run time
-    float eta                    = -1.0f;
-    bool  monitor_test_cost      = false;
-    bool  monitor_test_accuracy  = false;
-    bool  monitor_train_cost     = false;
-    bool  monitor_train_accuracy = false;
+    float     eta                    = -1.0f;
+    bool      monitor_test_cost      = false;
+    bool      monitor_test_accuracy  = false;
+    bool      monitor_eval_cost      = false;
+    bool      monitor_eval_accuracy  = false;
+    bool      monitor_train_cost     = false;
+    bool      monitor_train_accuracy = false;
+    long long learn_time             = 0;
 
     // results
     std::vector<float>
         test_costs, test_accuracies,
+        eval_costs, eval_accuracies,
         train_costs, train_accuracies;
 
     void reset_results()
@@ -86,9 +91,25 @@ struct HyperParameter
         train_accuracies.resize(0);
     }
 
+    void reset_monitor()
+    {
+        monitor_test_cost      = false;
+        monitor_test_accuracy  = false;
+        monitor_eval_cost      = false;
+        monitor_eval_accuracy  = false;
+        monitor_train_cost     = false;
+        monitor_train_accuracy = false;
+    }
+
+
     // check if required parameters are given
     void is_valid() const
     {
+        if ((monitor_test_cost || monitor_test_accuracy) && test_data == nullptr)
+            raise_error("Test data is required for requested monitoring.");
+        if ((monitor_eval_cost || monitor_eval_accuracy) && eval_data == nullptr)
+            raise_error("Evaluation data is required for requested monitoring.");
+
         if (no_improvement_in)
         {
             if (test_data == nullptr)
@@ -117,7 +138,10 @@ inline std::ostream& operator<<(std::ostream& out, const HyperParameter& hy)
         out << "\tusing test data of size: " << hy.test_data->get_x().n_cols << std::endl;
     else
         out << "\tusing no test data" << std::endl;
-
+    if (hy.eval_data != nullptr)
+        out << "\tusing evaluation data of size: " << hy.eval_data->get_x().n_cols << std::endl;
+    else
+        out << "\tusing no evaluation data" << std::endl;
 
     out << "\tmini batch size: " << hy.mini_batch_size << std::endl;
 

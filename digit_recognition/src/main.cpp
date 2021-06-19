@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "costs.h"
+#include "net/hyper_surfer.h"
 #include "net/learn.h"
 #include "net/net.h"
 #include "net/setup.h"
@@ -25,7 +26,6 @@ void print_img(const arma::fvec& img)
 
 int main(int argc, const char* argv[])
 {
-    auto begin = std::chrono::high_resolution_clock::now();
     if (argc < 2)
         raise_error("Please specify the path to the data as the first parameter.");
     // load data
@@ -40,7 +40,6 @@ int main(int argc, const char* argv[])
     Data switched_training_data = training_data.get_switched();
     Data switched_test_data     = test_data.get_switched();
 
-    begin = std::chrono::high_resolution_clock::now();
 
 #if 1
     Network net;
@@ -48,18 +47,24 @@ int main(int argc, const char* argv[])
 
     // set monitoring
     HyperParameter hy;
-    hy.mini_batch_size        = 10;
-    hy.init_eta               = 0.1f;
-    hy.max_epochs             = 30;
-    hy.stop_eta_fraction      = 128.0f;
-    hy.no_improvement_in      = 10;
-    hy.mu                     = 0.0f;
-    hy.lambda_l1              = 0.0f;
-    hy.lambda_l2              = 5.0f;
-    hy.training_data          = &training_data;
-    hy.test_data              = &test_data;
+    hy.mini_batch_size   = 10;
+    hy.init_eta          = 0.1f;
+    hy.max_epochs        = 30;
+    hy.stop_eta_fraction = 128.0f;
+    hy.no_improvement_in = 10;
+    hy.mu                = 0.0f;
+    hy.lambda_l1         = 0.0f;
+    hy.lambda_l2         = 5.0f;
+    hy.training_data     = &training_data;
+    hy.test_data         = &test_data;
+    hy.eval_data         = nullptr;
+
+    hyper_surf(net, hy);
+
     hy.monitor_test_cost      = false;
     hy.monitor_test_accuracy  = true;
+    hy.monitor_eval_cost      = false;
+    hy.monitor_eval_accuracy  = false;
     hy.monitor_train_cost     = false;
     hy.monitor_train_accuracy = false;
 
@@ -113,19 +118,5 @@ int main(int argc, const char* argv[])
     print_img(feedforward(net, input9));
     delete net;
 #endif
-
-    // report
-    auto      end        = std::chrono::high_resolution_clock::now();
-    long long delta_time = (end - begin).count();
-    if (delta_time > 1e9)
-        std::cout << std::to_string(delta_time / 1e9f) << " seconds";
-    else if (delta_time > 1e6)
-        std::cout << std::to_string(delta_time / 1e6f) << " milliseconds";
-    else if (delta_time > 1e3)
-        std::cout << std::to_string(delta_time / 1e3f) << " microseconds";
-    else
-        std::cout << std::to_string(delta_time) << " nanoseconds";
-    std::cout << std::endl;
-
     return 0;
 }

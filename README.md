@@ -26,6 +26,7 @@ Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnet
 
 ## Lambda
 - validation accuracy
+- best improvement
 - start with 0 and get good eta
 - start at 1
 - order of magnitude as with eta

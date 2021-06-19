@@ -104,21 +104,30 @@ void update_learn_status(const Network& net, HyperParameter& hy)
     // evaluate status
     if (hy.monitor_test_cost)
     {
-        // only when test_data is given
-        if (hy.test_data == nullptr)
-            raise_error("Test data is required for requested monitoring.");
         float cost = total_cost(net, hy.test_data, hy.lambda_l1, hy.lambda_l2);
         hy.test_costs.push_back(cost);
         std::cout << "  \tCost on test data: " << cost;
     }
     if (hy.monitor_test_accuracy)
     {
-        if (hy.test_data == nullptr)
-            raise_error("Test data is required for requested monitoring.");
         float accuracy = total_accuracy(net, hy.test_data);
         hy.test_accuracies.push_back(accuracy);
         size_t n_test = hy.test_data->get_y().n_cols;
         std::cout << "  \tAccuracy on test data: " << accuracy << " / " << n_test;
+    }
+
+    if (hy.monitor_eval_cost)
+    {
+        float cost = total_cost(net, hy.eval_data, hy.lambda_l1, hy.lambda_l2);
+        hy.eval_costs.push_back(cost);
+        std::cout << "  \tCost on eval data: " << cost;
+    }
+    if (hy.monitor_eval_accuracy)
+    {
+        float accuracy = total_accuracy(net, hy.eval_data);
+        hy.eval_accuracies.push_back(accuracy);
+        size_t n_test = hy.eval_data->get_y().n_cols;
+        std::cout << "  \tAccuracy on eval data: " << accuracy << " / " << n_test;
     }
 
     if (hy.monitor_train_cost)
@@ -138,6 +147,7 @@ void update_learn_status(const Network& net, HyperParameter& hy)
 
 void sgd(Network& net, HyperParameter& hy)
 {
+    auto begin = std::chrono::high_resolution_clock::now();
     hy.is_valid();
     // current eta may get changed over time
     float eta = hy.init_eta;
@@ -174,34 +184,31 @@ void sgd(Network& net, HyperParameter& hy)
         update_learn_status(net, hy);
 
         // learning rate schedule
-        if (hy.no_improvement_in)
+        // when there aren't enough epochs yet, don't do anything
+        if (hy.no_improvement_in && epochs_since_last_reduction >= hy.no_improvement_in)
         {
-            // when there aren't enough epochs yet, don't do anything
-            if (epochs_since_last_reduction >= hy.no_improvement_in)
+            // sum up deltas between values
+            size_t n_values   = hy.test_accuracies.size();
+            float  sum_delta  = 0.0f;
+            float  last_value = hy.test_accuracies[n_values - hy.no_improvement_in];
+            for (int i = n_values - (hy.no_improvement_in - 1); i < n_values; ++i)
             {
-                // sum up deltas between values
-                size_t n_values   = hy.test_accuracies.size();
-                float  sum_delta  = 0.0f;
-                float  last_value = hy.test_accuracies[n_values - hy.no_improvement_in];
-                for (int i = n_values - (hy.no_improvement_in - 1); i < n_values; ++i)
-                {
-                    float current_value = hy.test_accuracies[i];
-                    sum_delta += current_value - last_value;
-                    last_value = current_value;
-                }
-                // no improvement?
-                if (sum_delta < 0.0f)
-                {
-                    eta /= 2;
-                    // reset
-                    epochs_since_last_reduction = 0;
-                    std::cout << "No improvement in last " << hy.no_improvement_in << " epochs; reducing learning rate to: " << eta << std::endl;
+                float current_value = hy.test_accuracies[i];
+                sum_delta += current_value - last_value;
+                last_value = current_value;
+            }
+            // no improvement?
+            if (sum_delta < 0.0f)
+            {
+                eta /= 2;
+                // reset
+                epochs_since_last_reduction = 0;
+                std::cout << "No improvement in last " << hy.no_improvement_in << " epochs; reducing learning rate to: " << eta << std::endl;
 
-                    if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
-                    {
-                        std::cout << "Learning rate dropped below 1/" << hy.stop_eta_fraction << "; learning terminated." << std::endl;
-                        return;
-                    }
+                if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
+                {
+                    std::cout << "Learning rate dropped below 1/" << hy.stop_eta_fraction << "; learning terminated." << std::endl;
+                    return;
                 }
             }
         }
@@ -213,6 +220,19 @@ void sgd(Network& net, HyperParameter& hy)
         ++epoch;
         ++epochs_since_last_reduction;
     }
+    // report
+    auto      end        = std::chrono::high_resolution_clock::now();
+    long long delta_time = (end - begin).count();
+    hy.learn_time        = delta_time;
+    if (delta_time > 1e9)
+        std::cout << std::to_string(delta_time / 1e9f) << " seconds";
+    else if (delta_time > 1e6)
+        std::cout << std::to_string(delta_time / 1e6f) << " milliseconds";
+    else if (delta_time > 1e3)
+        std::cout << std::to_string(delta_time / 1e3f) << " microseconds";
+    else
+        std::cout << std::to_string(delta_time) << " nanoseconds";
+    std::cout << std::endl;
 }
 
 void update_mini_batch(Network&                   net,
