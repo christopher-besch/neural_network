@@ -181,7 +181,7 @@ void sgd(Network& net, HyperParameter& hy)
                               hy.lambda_l2,
                               n);
         }
-        std::cout << "Epoch " << epoch << " training complete" << std::endl;
+        std::cout << "Epoch " << epoch << " training complete";
         update_learn_status(net, hy);
 
         // learning rate schedule
@@ -190,7 +190,7 @@ void sgd(Network& net, HyperParameter& hy)
         {
             float sum_delta = get_sum_delta(hy.test_accuracies.end() - hy.no_improvement_in, hy.test_accuracies.end());
             // no improvement?
-            if (sum_delta < 0.0f)
+            if (sum_delta <= 0.0f)
             {
                 eta /= 2;
                 // reset
