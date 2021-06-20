@@ -1,7 +1,6 @@
 #pragma once
 #include "costs.h"
 #include "net.h"
-#include "pch.h"
 
 // sizes of layers, first is input, last is output
 // beware of memory leaks

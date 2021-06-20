@@ -1,9 +1,5 @@
 #pragma once
-#include "pch.h"
-
 #include "sigmoid.h"
-
-#include <cmath>
 
 class Cost
 {

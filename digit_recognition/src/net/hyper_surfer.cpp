@@ -88,7 +88,8 @@ void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_e
 {
     std::cout << "// surfing on mini batch size" << std::endl;
     hy.reset_monitor();
-    hy.max_epochs = first_epochs;
+    hy.monitor_eval_accuracy = true;
+    hy.max_epochs            = first_epochs;
 
     // can't be any smaller than online learning or bigger than training data
     size_t min = 1;
@@ -102,16 +103,21 @@ void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_e
         size_t right_value = middle + (max - middle) / 2;
 
         std::cout << "// evaluate left value for mini batch size" << std::endl;
+        hy.init_eta *= static_cast<float>(hy.mini_batch_size) / static_cast<float>(left_value);
         hy.mini_batch_size = left_value;
         test(net, hy);
-        long long left_time = hy.learn_time;
+        long long left_time  = hy.learn_time;
+        float     left_delta = get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
 
         std::cout << "// evaluate right value for mini batch size" << std::endl;
+        hy.init_eta *= static_cast<float>(hy.mini_batch_size) / static_cast<float>(right_value);
         hy.mini_batch_size = right_value;
         test(net, hy);
-        long long right_time = hy.learn_time;
+        long long right_time  = hy.learn_time;
+        float     right_delta = get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
 
-        if (left_time < right_time)
+        // find best improvement per time
+        if ((left_delta / left_time) > (right_delta / right_time))
         {
             min = min;
             max = middle;
@@ -123,12 +129,15 @@ void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_e
             max = max;
             std::cout << "// bigger side [" << min << "; " << max << "] is better for mini batch size" << std::endl;
         }
-        hy.mini_batch_size = min + (max - min) / 2;
+        size_t new_mini_batch_size = min + (max - min) / 2;
+        // scale eta anti-proportional to mini batch size
+        hy.init_eta *= static_cast<float>(hy.mini_batch_size) / static_cast<float>(new_mini_batch_size);
+        hy.mini_batch_size = new_mini_batch_size;
         // only size_t <- fraction not possible
         if (max - min < 2)
             break;
     }
-    std::cout << "// found best mini batch size: " << hy.mini_batch_size << std::endl;
+    std::cout << "// found best mini batch size: " << hy.mini_batch_size << "; set eta threshold to " << hy.init_eta << std::endl;
 }
 
 void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta, size_t first_epochs, size_t max_tries)
@@ -233,10 +242,10 @@ void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t first_epoc
         default_fine_surf(net, hy, hy.mu, 0.0f, 1.0f, first_epochs, surf_depth);
         std::cout << std::endl;
         std::cout << "// " << i << ". fine eta adjustment" << std::endl;
-        default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 2.0f, hy.init_eta * 2.0f, first_epochs, surf_depth);
+        default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 1.5f, hy.init_eta * 1.5f, first_epochs, surf_depth);
         std::cout << std::endl;
         std::cout << "// " << i << ". fine lambda adjustment" << std::endl;
-        default_fine_surf(net, hy, hy.lambda_l2, hy.lambda_l2 / 2.0f, hy.lambda_l2 * 2.0f, first_epochs, surf_depth);
+        default_fine_surf(net, hy, hy.lambda_l2, hy.lambda_l2 / 1.5f, hy.lambda_l2 * 1.5f, first_epochs, surf_depth);
         std::cout << std::endl;
     }
 }

@@ -38,6 +38,7 @@ bin-int/*
 Makefile
 .vscode/*
 build
+debug_build
 
 .cache/*
 compile_comands.json

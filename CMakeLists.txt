@@ -8,5 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/utils")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/armadillo")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog")
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/digit_recognition")

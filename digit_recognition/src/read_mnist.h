@@ -1,6 +1,4 @@
 #pragma once
-#include "pch.h"
-
 #include "data.h"
 
 int32_t get_int32_t(std::ifstream& file);

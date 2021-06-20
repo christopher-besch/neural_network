@@ -1,7 +1,6 @@
 #pragma once
 #include "costs.h"
 #include "data.h"
-#include "pch.h"
 
 struct Network
 {

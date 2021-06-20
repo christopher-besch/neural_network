@@ -7,3 +7,6 @@
 [submodule "vendor/armadillo"]
 	path = vendor/armadillo
 	url = https://github.com/christopher-besch/armadillo_fork
+[submodule "vendor/spdlog"]
+	path = vendor/spdlog
+	url = https://github.com/gabime/spdlog

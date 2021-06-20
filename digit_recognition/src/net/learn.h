@@ -1,7 +1,6 @@
 #pragma once
 #include "data.h"
 #include "net.h"
-#include "pch.h"
 
 // return number of correct results of neural network
 // neuron in final layer with highest activation determines result

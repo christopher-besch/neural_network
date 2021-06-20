@@ -1,5 +1,8 @@
 #pragma once
-#include "pch.h"
+#include <armadillo>
+#include <stddef.h>
+
+#include "utils.h"
 
 class Data
 {
