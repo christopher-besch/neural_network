@@ -1,30 +1,32 @@
 # Neural Networks and Deep Learning
+ 
+[![Build Windows](https://github.com/christopher-besch/neural_network/workflows/build_windows/badge.svg)](https://github.com/SkillerRaptor/build_windows/blob/master/.github/workflows/build_windows.yml)
+[![Build Linux](https://github.com/christopher-besch/neural_network/workflows/build_linux/badge.svg)](https://github.com/christopher-besch/build_linux/blob/master/.github/workflows/build_linux.yml)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](https://github.com/christopher-besch/neural_network/blob/main/LICENSE)
 
-## [Markus' Sister Project](https://github.com/MarcasRealAccount/NeuralNetwork)
+Some Experiments with Neural Networks and Deep Learning.
 
-Some Experiments with Neural Networks and Deep Learning
+Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnetworksanddeeplearning.com/).
 
-Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnetworksanddeeplearning.com/)
-
-# Dependencies
+## Dependencies
 
 - armadillo
 - LAPACK and BLAS have to be installed on your system.
    On Debian based systems you can use `sudo apt-get install libblas-dev liblapack-dev` to install them.
 
-# A Brief History of how to Traverse Hyper-Parameter Space
+## A Brief History of how to Traverse Hyper-Parameter Space
 
-## General
+### General
 - use simpler version of problem and network first -> speed up
 
-## Eta
+### Eta
 - find threshold of immediate (in first few epochs) decrease, no rise or oscillation of training cost
 - order of magnitude: start with 0.01, multiply or divide by 10
 - fine tune: compare multiple values directly above found magnitude
 - iterate a few times
 - use early stopping or half threshold as constant value
 
-## Lambda
+### Lambda
 - validation accuracy
 - best improvement
 - start with 0 and get good eta
@@ -34,13 +36,15 @@ Based on [Neural Networks and Deep Learning by Michael Nielsen](http://neuralnet
 - re-optimize eta
 - bouncing with eta
 
-## Momentum co-efficient
+### Momentum co-efficient
 - same as lambda
 - but order of magnitude already known, [0; 1]
 - bounce with eta and lambda
 
-## Mini-Batch Size
+### Mini-Batch Size
 - roughly optimize other hyper-parameters
 - plot validation accuracy versus time -> try many different
 - scale eta anti-proportional to mini-batch size
 - proceed by optimizing other hyper-parameters
+
+### [Markus' Sister Project](https://github.com/MarcasRealAccount/NeuralNetwork)
