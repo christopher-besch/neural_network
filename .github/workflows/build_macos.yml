@@ -19,9 +19,9 @@ jobs:
             build_type: "debug",
           }
           - {
-            name: "Ubuntu Debug",
-            artifact: "macos_debug.tar.xz",
-            build_type: "debug",
+            name: "macOS Release",
+            artifact: "macos_release.tar.xz",
+            build_type: "release",
           }
     steps:
       - name: Checkout
