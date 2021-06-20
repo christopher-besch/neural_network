@@ -2,6 +2,8 @@
 
 #include "log.h"
 
+namespace NeuralNet
+{
 std::shared_ptr<spdlog::logger> Log::s_logger;
 
 void Log::init()
@@ -27,3 +29,4 @@ void Log::init()
         std::exit(EXIT_FAILURE);
     }
 }
+} // namespace NeuralNet

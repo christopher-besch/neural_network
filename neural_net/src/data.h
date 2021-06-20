@@ -2,8 +2,10 @@
 #include <armadillo>
 #include <stddef.h>
 
-#include "utils.h"
+#include "log.h"
 
+namespace NeuralNet
+{
 class Data
 {
 private:
@@ -92,13 +94,14 @@ public:
     Data get_sub(size_t offset, size_t length) const
     {
         if (offset + length > m_data.n_cols)
-            raise_error("Requested sub data is invlaid.");
+            raise_critical("Requested sub data is invlaid.");
         return { m_data.cols(offset, offset + length - 1), m_x_size, m_y_size };
     }
     void sub(size_t offset, size_t length)
     {
         if (offset + length > m_data.n_cols)
-            raise_error("Requested sub data is invlaid.");
+            raise_critical("Requested sub data is invlaid.");
         m_data = m_data.cols(offset, offset + length - 1);
     }
 };
+} // namespace NeuralNet

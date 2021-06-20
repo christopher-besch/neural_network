@@ -4,6 +4,8 @@
 
 #include <random>
 
+namespace NeuralNet
+{
 size_t total_accuracy(const Network& net, const Data* data)
 {
     size_t sum = 0;
@@ -339,3 +341,4 @@ void backprop(const Network&             net,
         nabla_w[layer_idx] += error * activations[layer_idx].t();
     }
 }
+} // namespace NeuralNet

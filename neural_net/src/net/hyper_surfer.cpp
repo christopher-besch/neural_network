@@ -3,6 +3,15 @@
 #include "hyper_surfer.h"
 #include "learn.h"
 
+namespace NeuralNet
+{
+inline void test(const Network& net, HyperParameter& hy)
+{
+    Network current_net = net;
+    hy.reset_results();
+    sgd(current_net, hy);
+}
+
 void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs, size_t surf_depth)
 {
     std::cout << "// hyper surfing" << std::endl;
@@ -249,3 +258,4 @@ void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t first_epoc
         std::cout << std::endl;
     }
 }
+} // namespace NeuralNet

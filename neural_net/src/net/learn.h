@@ -2,6 +2,8 @@
 #include "data.h"
 #include "net.h"
 
+namespace NeuralNet
+{
 // return number of correct results of neural network
 // neuron in final layer with highest activation determines result
 size_t total_accuracy(const Network& net, const Data* data);
@@ -39,3 +41,4 @@ void backprop(const Network&             net,
               const arma::subview<float> y,
               std::vector<arma::fvec>&   nabla_b,
               std::vector<arma::fmat>&   nabla_w);
+} // namespace NeuralNet

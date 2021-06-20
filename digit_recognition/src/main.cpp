@@ -1,4 +1,7 @@
-#include "network.h"
+#include "neural_net.h"
+#include <iostream>
+
+#include "utils.h"
 
 void print_img(const arma::fvec& img)
 {
@@ -15,20 +18,20 @@ void print_img(const arma::fvec& img)
 
 int main(int argc, const char* argv[])
 {
-    init();
+    NeuralNet::init();
     if (argc < 2)
         raise_error("Please specify the path to the data as the first parameter.");
     if (argc >= 3)
         switch (argv[3][0])
         {
         case 'd':
-            Log::set_level(spdlog::level::debug);
+            NeuralNet::Log::set_level(spdlog::level::debug);
             break;
         case 'i':
-            Log::set_level(spdlog::level::info);
+            NeuralNet::Log::set_level(spdlog::level::info);
             break;
         case 'c':
-            Log::set_level(spdlog::level::critical);
+            NeuralNet::Log::set_level(spdlog::level::critical);
             break;
         default:
             raise_error("undefined log level: '" << argv[3] << "'");
@@ -37,22 +40,22 @@ int main(int argc, const char* argv[])
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
 
-    Data big_data      = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
-    Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
-    Data training_data = big_data.get_sub(0, 50000);
-    Data eval_data     = big_data.get_sub(50000, 10000);
+    NeuralNet::Data big_data      = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
+    NeuralNet::Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
+    NeuralNet::Data training_data = big_data.get_sub(0, 50000);
+    NeuralNet::Data eval_data     = big_data.get_sub(50000, 10000);
 
     // x and y switched
-    Data switched_training_data = training_data.get_switched();
-    Data switched_test_data     = test_data.get_switched();
+    NeuralNet::Data switched_training_data = training_data.get_switched();
+    NeuralNet::Data switched_test_data     = test_data.get_switched();
 
-    Data cp_training_data = training_data.get_sub(0, 3000);
-    Data cp_test_data     = test_data.get_sub(0, 1000);
-    Data cp_eval_data     = eval_data.get_sub(0, 1000);
+    NeuralNet::Data cp_training_data = training_data.get_sub(0, 3000);
+    NeuralNet::Data cp_test_data     = test_data.get_sub(0, 1000);
+    NeuralNet::Data cp_eval_data     = eval_data.get_sub(0, 1000);
 
-    log_info("info");
-    log_debug("debug");
-    raise_critical("critical");
+    NeuralNet::log_info("info");
+    NeuralNet::log_debug("debug");
+    raise_error("critical");
 
 #if 0
     Network net;

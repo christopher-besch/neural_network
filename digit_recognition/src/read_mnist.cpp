@@ -1,10 +1,9 @@
-#include "pch.h"
-
 #include "read_mnist.h"
 
-#include "data.h"
+#include "neural_net.h"
+#include "utils.h"
 
-int32_t get_int32_t(std::ifstream& file)
+inline int32_t get_int32_t(std::ifstream& file)
 {
     int32_t num = 0;
     file.read(reinterpret_cast<char*>(&num), 4);
@@ -14,7 +13,7 @@ int32_t get_int32_t(std::ifstream& file)
     return num;
 }
 
-Data load_data(std::string images_path, std::string labels_path)
+NeuralNet::Data load_data(std::string images_path, std::string labels_path)
 {
     try
     {
@@ -50,7 +49,7 @@ Data load_data(std::string images_path, std::string labels_path)
         // read dataset //
         //////////////////
         // one column per data set
-        Data data(images_amount, n_rows * n_cols, 10);
+        NeuralNet::Data data(images_amount, n_rows * n_cols, 10);
         for (int i = 0; i < images_amount; ++i)
         {
             for (int pixel_idx = 0; pixel_idx < n_rows * n_cols; ++pixel_idx)

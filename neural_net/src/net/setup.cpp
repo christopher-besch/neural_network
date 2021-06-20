@@ -2,6 +2,8 @@
 
 #include "setup.h"
 
+namespace NeuralNet
+{
 void create_network(Network& net, const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost)
 {
     // todo: make multi threaded
@@ -134,3 +136,4 @@ void reset_vel(Network& net)
         net.vel_weights[i] = arma::fmat(net.weights[i].n_rows, net.weights[i].n_cols, arma::fill::zeros);
     }
 }
+} // namespace NeuralNet

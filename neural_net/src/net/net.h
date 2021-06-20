@@ -2,6 +2,8 @@
 #include "costs.h"
 #include "data.h"
 
+namespace NeuralNet
+{
 struct Network
 {
     size_t num_layers;
@@ -105,26 +107,26 @@ struct HyperParameter
     void is_valid() const
     {
         if ((monitor_test_cost || monitor_test_accuracy) && test_data == nullptr)
-            raise_error("Test data is required for requested monitoring.");
+            raise_critical("Test data is required for requested monitoring.");
         if ((monitor_eval_cost || monitor_eval_accuracy) && eval_data == nullptr)
-            raise_error("Evaluation data is required for requested monitoring.");
+            raise_critical("Evaluation data is required for requested monitoring.");
 
         if (no_improvement_in)
         {
             if (test_data == nullptr)
-                raise_error("Test data is required for early stopping and learning rate schedule.");
+                raise_critical("Test data is required for early stopping and learning rate schedule.");
             if (!monitor_test_accuracy)
-                raise_error("The test data accuracy has to be monitored for early stopping and learning rate schedule.");
+                raise_critical("The test data accuracy has to be monitored for early stopping and learning rate schedule.");
             if (no_improvement_in < 2)
-                raise_error("no_improvement_in has to be at least two or not given.");
+                raise_critical("no_improvement_in has to be at least two or not given.");
         }
 
         if (!mini_batch_size)
-            raise_error("mini_batch_size needs to be defined");
+            raise_critical("mini_batch_size needs to be defined");
         if (!init_eta)
-            raise_error("init_eta needs to be defined");
+            raise_critical("init_eta needs to be defined");
         if (training_data == nullptr)
-            raise_error("training_data needs to be given");
+            raise_critical("training_data needs to be given");
     }
 };
 
@@ -161,3 +163,4 @@ inline std::ostream& operator<<(std::ostream& out, const HyperParameter& hy)
         out << "\tusing L2 regularization with lambda: " << hy.lambda_l2 << std::endl;
     return out;
 }
+} // namespace NeuralNet

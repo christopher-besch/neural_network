@@ -2,13 +2,8 @@
 #include "learn.h"
 #include "net.h"
 
-inline void test(const Network& net, HyperParameter& hy)
+namespace NeuralNet
 {
-    Network current_net = net;
-    hy.reset_results();
-    sgd(current_net, hy);
-}
-
 // do everything in the surfers power to create the best vlaues for the hyper parameters possible
 // manual optimization is gernerally better but these values can be used as a starting point
 void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs = 3, size_t surf_depth = 5);
@@ -31,3 +26,4 @@ void default_fine_surf(const Network& net, HyperParameter& hy, float& h_paramete
 
 // optimize one hyper parameter after another, closing in to good values
 void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t fine_surfs, size_t surf_depth);
+} // namespace NeuralNet

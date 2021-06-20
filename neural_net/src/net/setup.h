@@ -2,6 +2,8 @@
 #include "costs.h"
 #include "net.h"
 
+namespace NeuralNet
+{
 // sizes of layers, first is input, last is output
 // beware of memory leaks
 void create_network(Network& net, const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost = std::make_shared<CrossEntropyCost>());
@@ -23,3 +25,4 @@ void large_weight_init(Network& net);
 
 // set velocities to 0
 void reset_vel(Network& net);
+} // namespace NeuralNet

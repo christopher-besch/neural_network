@@ -1,6 +1,10 @@
 #pragma once
 #include "sigmoid.h"
 
+#include <memory>
+
+namespace NeuralNet
+{
 class Cost
 {
 public:
@@ -55,3 +59,4 @@ class CrossEntropyCost : public Cost
         return "cross_entropy";
     }
 };
+} // namespace NeuralNet

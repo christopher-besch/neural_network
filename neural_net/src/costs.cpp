@@ -2,6 +2,8 @@
 
 #include "costs.h"
 
+namespace NeuralNet
+{
 std::shared_ptr<Cost> Cost::get(const std::string& name)
 {
     if (name == "quadratic")
@@ -11,3 +13,4 @@ std::shared_ptr<Cost> Cost::get(const std::string& name)
     else
         raise_error("Unable to find cost function with name'" << name << "'.");
 }
+} // namespace NeuralNet
