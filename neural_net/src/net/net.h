@@ -160,7 +160,7 @@ struct HyperParameter
         if (lambda_l1)
             out << "\tusing L1 regularization with lambda: " << lambda_l1 << std::endl;
         if (lambda_l2)
-            out << "\tusing L2 regularization with lambda: " << lambda_l2 << std::endl;
+            out << "\tusing L2 regularization with lambda: " << lambda_l2;
         return out.str();
     }
 };

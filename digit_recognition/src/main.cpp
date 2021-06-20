@@ -19,32 +19,33 @@ void print_img(const arma::fvec& img)
 int main(int argc, const char* argv[])
 {
     NeuralNet::init();
+    NeuralNet::Log::set_client_level(spdlog::level::trace);
     if (argc < 2)
-        raise_error("Please specify the path to the data as the first parameter.");
-    if (argc >= 3)
-        switch (argv[2][0])
-        {
-        case 't':
-            NeuralNet::Log::set_level(spdlog::level::trace);
-            break;
-        case 'i':
-            NeuralNet::Log::set_level(spdlog::level::info);
-            break;
-        case 'd':
-            NeuralNet::Log::set_level(spdlog::level::debug);
-            break;
-        case 'w':
-            NeuralNet::Log::set_level(spdlog::level::warn);
-            break;
-        case 'e':
-            NeuralNet::Log::set_level(spdlog::level::err);
-            break;
-        case 'c':
-            NeuralNet::Log::set_level(spdlog::level::critical);
-            break;
-        default:
-            raise_error("undefined log level: '" << argv[2] << "'");
-        }
+        raise_critical("Please specify the path to the data as the first parameter.");
+    // if (argc >= 3)
+    //     switch (argv[2][0])
+    //     {
+    //     case 't':
+    //         NeuralNet::Log::set_level(spdlog::level::trace);
+    //         break;
+    //     case 'i':
+    //         NeuralNet::Log::set_level(spdlog::level::info);
+    //         break;
+    //     case 'd':
+    //         NeuralNet::Log::set_level(spdlog::level::debug);
+    //         break;
+    //     case 'w':
+    //         NeuralNet::Log::set_level(spdlog::level::warn);
+    //         break;
+    //     case 'e':
+    //         NeuralNet::Log::set_level(spdlog::level::err);
+    //         break;
+    //     case 'c':
+    //         NeuralNet::Log::set_level(spdlog::level::critical);
+    //         break;
+    //     default:
+    //         NeuralNet::raise_critical("undefined log level: '" << argv[2] << "'");
+    //     }
     // load data
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
@@ -85,6 +86,8 @@ int main(int argc, const char* argv[])
     hy.test_data         = &cp_test_data;
     hy.eval_data         = &cp_eval_data;
 
+    NeuralNet::Log::set_learn_level(spdlog::level::debug);
+    NeuralNet::Log::set_hyper_level(spdlog::level::trace);
     hyper_surf(net, hy);
     // hy.init_eta        = 2.6982f;
     // hy.lambda_l2       = 11.9118f;
@@ -104,7 +107,8 @@ int main(int argc, const char* argv[])
     hy.monitor_train_accuracy = false;
 
     // learn network
-    NeuralNet::Log::set_level(spdlog::level::trace);
+    NeuralNet::Log::set_learn_level(spdlog::level::trace);
+    NeuralNet::Log::set_learn_level(spdlog::level::trace);
     sgd(net, hy);
     save_json(net, "out_net.json");
 #else

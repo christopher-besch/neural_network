@@ -23,11 +23,11 @@ NeuralNet::Data load_data(std::string images_path, std::string labels_path)
         std::ifstream images_file;
         images_file.open(images_path, std::ios::in | std::ios::binary);
         if (!images_file.is_open())
-            raise_error("Can't open images file: " << images_path);
+            raise_critical("Can't open images file: {}", images_path);
 
         // magic number
         if (get_int32_t(images_file) != 2051)
-            raise_error("images file '" << images_path << "' has an unsupported magic number");
+            raise_critical("images file '{}' has an unsupported magic number", images_path);
         // data set dimensions
         int32_t images_amount = get_int32_t(images_file);
         int32_t n_rows        = get_int32_t(images_file);
@@ -39,15 +39,15 @@ NeuralNet::Data load_data(std::string images_path, std::string labels_path)
         std::ifstream labels_file;
         labels_file.open(labels_path, std::ios::in | std::ios::binary);
         if (!images_file.is_open())
-            raise_error("Can't open labels file: " << images_path);
+            raise_critical("Can't open labels file: {}", images_path);
 
         // magic number
         if (get_int32_t(labels_file) != 2049)
-            raise_error("labels file '" << labels_path << "' has an unsupported magic number");
+            raise_critical("labels file '{}' has an unsupported magic number", labels_path);
         // data set dimensions
         int32_t labels_amount = get_int32_t(labels_file);
         if (images_amount != labels_amount)
-            raise_error("images file '" << images_path << "' and labels file '" << labels_path << "' don't have same amount (" << images_amount << " and " << labels_amount << ") of data sets");
+            raise_critical("images file '{}' and labels file '{}' don't have same amount ({} and {}) of data sets", images_path, labels_path, images_amount, labels_amount);
 
         //////////////////
         // read dataset //
@@ -74,6 +74,6 @@ NeuralNet::Data load_data(std::string images_path, std::string labels_path)
     }
     catch (const std::exception& ex)
     {
-        raise_error(ex.what() << " error parsing MNIST file " << images_path << " or " << labels_path << "!");
+        raise_critical("{} error parsing MNIST file '{}' or '{}'", ex.what(), images_path, labels_path);
     }
 }
