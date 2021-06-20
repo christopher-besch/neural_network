@@ -22,6 +22,8 @@ NeuralNet::Data load_data(std::string images_path, std::string labels_path)
         ////////////
         std::ifstream images_file;
         images_file.open(images_path, std::ios::in | std::ios::binary);
+        if (!images_file.is_open())
+            raise_error("Can't open images file: " << images_path);
 
         // magic number
         if (get_int32_t(images_file) != 2051)
@@ -36,6 +38,8 @@ NeuralNet::Data load_data(std::string images_path, std::string labels_path)
         ////////////
         std::ifstream labels_file;
         labels_file.open(labels_path, std::ios::in | std::ios::binary);
+        if (!images_file.is_open())
+            raise_error("Can't open labels file: " << images_path);
 
         // magic number
         if (get_int32_t(labels_file) != 2049)

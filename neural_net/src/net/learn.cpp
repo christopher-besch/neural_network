@@ -108,50 +108,50 @@ void update_learn_status(const Network& net, HyperParameter& hy)
     {
         float cost = total_cost(net, hy.test_data, hy.lambda_l1, hy.lambda_l2);
         hy.test_costs.push_back(cost);
-        std::cout << "  \tCost on test data: " << cost;
+        log_extra("\tCost on test data: {}", cost);
     }
     if (hy.monitor_test_accuracy)
     {
         float accuracy = total_accuracy(net, hy.test_data);
         hy.test_accuracies.push_back(accuracy);
         size_t n_test = hy.test_data->get_y().n_cols;
-        std::cout << "  \tAccuracy on test data: " << accuracy << " / " << n_test;
+        log_extra("\tAccuracy on test data: {} / {}", accuracy, n_test);
     }
 
     if (hy.monitor_eval_cost)
     {
         float cost = total_cost(net, hy.eval_data, hy.lambda_l1, hy.lambda_l2);
         hy.eval_costs.push_back(cost);
-        std::cout << "  \tCost on eval data: " << cost;
+        log_extra("\tCost on eval data: {}", cost);
     }
     if (hy.monitor_eval_accuracy)
     {
         float accuracy = total_accuracy(net, hy.eval_data);
         hy.eval_accuracies.push_back(accuracy);
-        size_t n_test = hy.eval_data->get_y().n_cols;
-        std::cout << "  \tAccuracy on eval data: " << accuracy << " / " << n_test;
+        size_t n_eval = hy.eval_data->get_y().n_cols;
+        log_extra("\tAccuracy on eval data: {} / {}", accuracy / n_eval);
     }
 
     if (hy.monitor_train_cost)
     {
         float cost = total_cost(net, hy.training_data, hy.lambda_l1, hy.lambda_l2);
         hy.train_costs.push_back(cost);
-        std::cout << "  \tCost on training data: " << cost;
+        log_extra("\tCost on training data: {}", cost);
     }
     if (hy.monitor_train_accuracy)
     {
         float accuracy = total_accuracy(net, hy.training_data);
         hy.train_accuracies.push_back(accuracy);
-        std::cout << "  \tAccuracy on training data: " << accuracy << " / " << hy.training_data->get_x().n_cols;
+        size_t n_train = hy.training_data->get_x().n_cols;
+        log_extra("\tAccuracy on training data: {} / {}", accuracy, n_train);
     }
-    std::cout << std::endl;
 }
 
 void sgd(Network& net, HyperParameter& hy)
 {
     // info block
-    std::cout << "Using stochastic gradient descent:" << std::endl;
-    std::cout << hy;
+    log_extra("Using stochastic gradient descent:");
+    log_extra(hy.to_str());
 
     auto begin = std::chrono::high_resolution_clock::now();
     hy.is_valid();
@@ -184,7 +184,7 @@ void sgd(Network& net, HyperParameter& hy)
                               hy.lambda_l2,
                               n);
         }
-        std::cout << "Epoch " << epoch << " training complete";
+        log_extra("Epoch {} training complete", epoch);
         update_learn_status(net, hy);
 
         // learning rate schedule
@@ -198,20 +198,21 @@ void sgd(Network& net, HyperParameter& hy)
                 eta /= 2;
                 // reset
                 epochs_since_last_reduction = 0;
-                std::cout << "No improvement (" << sum_delta << ") in last " << hy.no_improvement_in << " epochs; reducing learning rate to: " << eta << std::endl;
+
+                log_extra("No improvement ({}) in last {} epochs; reducing learning rate to: {}", sum_delta, hy.no_improvement_in, eta);
 
                 if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
                 {
-                    std::cout << "Learning rate dropped below 1/" << hy.stop_eta_fraction << "; learning terminated." << std::endl;
+                    log_extra("Learning rate dropped below 1/{}; learning terminated.", hy.stop_eta_fraction);
                     quit = true;
                 }
             }
             else
-                std::cout << "test accuracy improvement in last " << hy.no_improvement_in << " epochs: " << sum_delta << std::endl;
+                log_extra("Test accuracy improvement in last {} epochs: {}", hy.no_improvement_in, sum_delta);
         }
         if (epoch >= hy.max_epochs)
         {
-            std::cout << "Maximum epochs exceeded; learning terminated" << std::endl;
+            log_extra("Maximum epochs exceeded; learning terminated");
             quit = true;
         }
         ++epoch;
@@ -222,14 +223,13 @@ void sgd(Network& net, HyperParameter& hy)
     long long delta_time = (end - begin).count();
     hy.learn_time        = delta_time;
     if (delta_time > 1e9)
-        std::cout << std::to_string(delta_time / 1e9f) << " seconds";
+        log_extra("learning time: {} seconds", std::to_string(delta_time / 1e9f));
     else if (delta_time > 1e6)
-        std::cout << std::to_string(delta_time / 1e6f) << " milliseconds";
+        log_extra("learning time: {} milliseconds", std::to_string(delta_time / 1e6f));
     else if (delta_time > 1e3)
-        std::cout << std::to_string(delta_time / 1e3f) << " microseconds";
+        log_extra("learning time: {} microseconds", std::to_string(delta_time / 1e3f));
     else
-        std::cout << std::to_string(delta_time) << " nanoseconds";
-    std::cout << std::endl;
+        log_extra("learning time: {} nanoseconds", std::to_string(delta_time));
 }
 
 void update_mini_batch(Network&                   net,

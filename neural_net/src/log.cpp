@@ -18,6 +18,10 @@ void Log::init()
         log_sinks[0]->set_pattern("%^[%T] %n: %v%$");
         log_sinks[1]->set_pattern("[%T] [%l] %n: %v");
 
+        spdlog::set_error_handler([](const std::string& msg) {
+            raise_error(msg);
+        });
+
         s_logger = std::make_shared<spdlog::logger>("console", begin(log_sinks), end(log_sinks));
         spdlog::register_logger(s_logger);
         s_logger->set_level(spdlog::level::trace);
@@ -25,8 +29,7 @@ void Log::init()
     }
     catch (const spdlog::spdlog_ex& ex)
     {
-        std::cout << "Log init failed: " << ex.what() << std::endl;
-        std::exit(EXIT_FAILURE);
+        raise_error("Log init failed: " << ex.what());
     }
 }
 } // namespace NeuralNet

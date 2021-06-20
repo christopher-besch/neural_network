@@ -22,7 +22,7 @@ void load_json_network(Network& net, const std::string& json_path)
 {
     std::ifstream file(json_path);
     if (!file)
-        raise_error("Can't open input json file!");
+        raise_critical("Can't open input json file!");
     json json_net;
     file >> json_net;
     file.close();
@@ -76,7 +76,7 @@ void save_json(const Network& net, const std::string& path)
 
     std::ofstream file(path);
     if (!file)
-        raise_error("Can't open output json file!");
+        raise_critical("Can't open output json file!");
     file << std::setw(4) << json_net;
     file.close();
 }

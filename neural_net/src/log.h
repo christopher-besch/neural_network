@@ -39,6 +39,13 @@ public:
         std::exit(EXIT_FAILURE);                  \
     } while (0)
 #endif
-#define log_info(...)  Log::get_logger()->info(__VA_ARGS__)
-#define log_debug(...) Log::get_logger()->debug(__VA_ARGS__)
+// used for too much log
+#define log_extra(...) Log::get_logger()->trace(__VA_ARGS__)
+// #define log_info(...)  Log::get_logger()->info(__VA_ARGS__)
+// general infos
+#define log_general(...) Log::get_logger()->debug(__VA_ARGS__)
+// something isn't the way it should be but there aren't any immediate consequences
+#define log_warn(...) Log::get_logger()->warn(__VA_ARGS__)
+// errors that can be recovered from
+#define log_error(...) Log::get_logger()->error(__VA_ARGS__)
 } // namespace NeuralNet

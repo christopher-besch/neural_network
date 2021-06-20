@@ -8,6 +8,9 @@ namespace NeuralNet
 // manual optimization is gernerally better but these values can be used as a starting point
 void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs = 3, size_t surf_depth = 5);
 
+// optimize one hyper parameter after another, closing in to good values
+void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t fine_surfs, size_t surf_depth);
+
 // using eval accuracy to find best order of magnitude of supplied parameter
 void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs = 5, size_t max_tries = 100);
 
@@ -23,7 +26,4 @@ void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta = 0
 // taking probe in between [min; middle] and [middle; max]
 // use better result as next [min; max] with middle in exact middle
 void default_fine_surf(const Network& net, HyperParameter& hy, float& h_parameter, float min, float max, size_t first_epochs, size_t depth);
-
-// optimize one hyper parameter after another, closing in to good values
-void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t fine_surfs, size_t surf_depth);
 } // namespace NeuralNet

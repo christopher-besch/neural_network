@@ -128,39 +128,40 @@ struct HyperParameter
         if (training_data == nullptr)
             raise_critical("training_data needs to be given");
     }
-};
 
-inline std::ostream& operator<<(std::ostream& out, const HyperParameter& hy)
-{
-    out << "\ttraining set size: " << hy.training_data->get_x().n_cols << std::endl;
-    if (hy.test_data != nullptr)
-        out << "\tusing test data of size: " << hy.test_data->get_x().n_cols << std::endl;
-    else
-        out << "\tusing no test data" << std::endl;
-    if (hy.eval_data != nullptr)
-        out << "\tusing evaluation data of size: " << hy.eval_data->get_x().n_cols << std::endl;
-    else
-        out << "\tusing no evaluation data" << std::endl;
-
-    out << "\tmini batch size: " << hy.mini_batch_size << std::endl;
-
-    if (hy.no_improvement_in)
+    std::string to_str() const
     {
-        out << "\tUsing learning rate schedule with starting eta: " << hy.init_eta << std::endl;
-        out << "\thalf eta when test accuracy didn't improve in the last " << hy.no_improvement_in << " epochs" << std::endl;
-        if (hy.stop_eta_fraction)
-            out << "\tStopping early when eta drops below: 1/" << hy.stop_eta_fraction << std::endl;
+        std::stringstream out;
+        out << "\ttraining set size: " << training_data->get_x().n_cols << std::endl;
+        if (test_data != nullptr)
+            out << "\tusing test data of size: " << test_data->get_x().n_cols << std::endl;
+        else
+            out << "\tusing no test data" << std::endl;
+        if (eval_data != nullptr)
+            out << "\tusing evaluation data of size: " << eval_data->get_x().n_cols << std::endl;
+        else
+            out << "\tusing no evaluation data" << std::endl;
+
+        out << "\tmini batch size: " << mini_batch_size << std::endl;
+
+        if (no_improvement_in)
+        {
+            out << "\tUsing learning rate schedule with starting eta: " << init_eta << std::endl;
+            out << "\thalf eta when test accuracy didn't improve in the last " << no_improvement_in << " epochs" << std::endl;
+            if (stop_eta_fraction)
+                out << "\tStopping early when eta drops below: 1/" << stop_eta_fraction << std::endl;
+        }
+        else
+            out << "\tusing constant eta: " << init_eta << std::endl;
+        out << "\tstop at max epochs: " << max_epochs << std::endl;
+
+        out << "\tmu: " << mu << std::endl;
+
+        if (lambda_l1)
+            out << "\tusing L1 regularization with lambda: " << lambda_l1 << std::endl;
+        if (lambda_l2)
+            out << "\tusing L2 regularization with lambda: " << lambda_l2 << std::endl;
+        return out.str();
     }
-    else
-        out << "\tusing constant eta: " << hy.init_eta << std::endl;
-    out << "\tstop at max epochs: " << hy.max_epochs << std::endl;
-
-    out << "\tmu: " << hy.mu << std::endl;
-
-    if (hy.lambda_l1)
-        out << "\tusing L1 regularization with lambda: " << hy.lambda_l1 << std::endl;
-    if (hy.lambda_l2)
-        out << "\tusing L2 regularization with lambda: " << hy.lambda_l2 << std::endl;
-    return out;
-}
+};
 } // namespace NeuralNet

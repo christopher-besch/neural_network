@@ -8,7 +8,6 @@ using json = nlohmann::json;
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-
 #include <cmath>
 #include <cstdint>
 #include <memory>

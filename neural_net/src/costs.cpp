@@ -11,6 +11,6 @@ std::shared_ptr<Cost> Cost::get(const std::string& name)
     else if (name == "cross_entropy")
         return std::make_shared<CrossEntropyCost>();
     else
-        raise_error("Unable to find cost function with name'" << name << "'.");
+        raise_critical("Unable to find cost function with name '{}", name);
 }
 } // namespace NeuralNet

@@ -16,6 +16,7 @@ float total_cost(const Network& net, const Data* data, float lambda_l1, float la
 // a gets changed
 arma::fmat feedforward(const Network& net, arma::fmat a);
 
+// when full_run -> e.g. print current epoch
 void update_learn_status(const Network& net, HyperParameter& hy);
 
 // stochastic gradient descent

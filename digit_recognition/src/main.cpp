@@ -22,19 +22,28 @@ int main(int argc, const char* argv[])
     if (argc < 2)
         raise_error("Please specify the path to the data as the first parameter.");
     if (argc >= 3)
-        switch (argv[3][0])
+        switch (argv[2][0])
         {
-        case 'd':
-            NeuralNet::Log::set_level(spdlog::level::debug);
+        case 't':
+            NeuralNet::Log::set_level(spdlog::level::trace);
             break;
         case 'i':
             NeuralNet::Log::set_level(spdlog::level::info);
+            break;
+        case 'd':
+            NeuralNet::Log::set_level(spdlog::level::debug);
+            break;
+        case 'w':
+            NeuralNet::Log::set_level(spdlog::level::warn);
+            break;
+        case 'e':
+            NeuralNet::Log::set_level(spdlog::level::err);
             break;
         case 'c':
             NeuralNet::Log::set_level(spdlog::level::critical);
             break;
         default:
-            raise_error("undefined log level: '" << argv[3] << "'");
+            raise_error("undefined log level: '" << argv[2] << "'");
         }
     // load data
     std::stringstream root_data_path;
@@ -53,13 +62,9 @@ int main(int argc, const char* argv[])
     NeuralNet::Data cp_test_data     = test_data.get_sub(0, 1000);
     NeuralNet::Data cp_eval_data     = eval_data.get_sub(0, 1000);
 
-    NeuralNet::log_info("info");
-    NeuralNet::log_debug("debug");
-    raise_error("critical");
-
-#if 0
-    Network net;
-    create_network(net, { 784, 30, 10 }, Cost::get("cross_entropy"));
+#if 1
+    NeuralNet::Network net;
+    create_network(net, { 784, 30, 10 }, NeuralNet::Cost::get("cross_entropy"));
 
     // set monitoring
     // HyperParameter hy;
@@ -72,7 +77,7 @@ int main(int argc, const char* argv[])
     // hy.lambda_l1         = 0.0f;
     // hy.lambda_l2         = 5.0f;
 
-    HyperParameter hy;
+    NeuralNet::HyperParameter hy;
     hy.no_improvement_in = 20;
     hy.stop_eta_fraction = 512.0f;
     hy.lambda_l1         = 0.0f;
@@ -80,11 +85,11 @@ int main(int argc, const char* argv[])
     hy.test_data         = &cp_test_data;
     hy.eval_data         = &cp_eval_data;
 
-    // hyper_surf(net, hy);
-    hy.init_eta        = 2.6982f;
-    hy.lambda_l2       = 11.9118f;
-    hy.mu              = 0.0713348f;
-    hy.mini_batch_size = 22;
+    hyper_surf(net, hy);
+    // hy.init_eta        = 2.6982f;
+    // hy.lambda_l2       = 11.9118f;
+    // hy.mu              = 0.0713348f;
+    // hy.mini_batch_size = 22;
 
     hy.max_epochs = 1000;
 
@@ -99,9 +104,10 @@ int main(int argc, const char* argv[])
     hy.monitor_train_accuracy = false;
 
     // learn network
+    NeuralNet::Log::set_level(spdlog::level::trace);
     sgd(net, hy);
     save_json(net, "out_net.json");
-// #else
+#else
     // switched
     Network* net = create_network({ 10, 30, 784 }, Cost::get("cross_entropy"));
     sgd(net,
