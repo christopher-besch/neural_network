@@ -65,7 +65,7 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.config.build_type}}
 
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{matrix.config.build_type}}
+        run: cmake --build ${{github.workspace}}/build --config ${{matrix.config.build_type}} -j2
 
       - name: Prepare upload
         run: |

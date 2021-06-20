@@ -79,7 +79,7 @@ void save_json(const Network& net, const std::string& path)
         raise_error("Can't open output json file!");
     file << std::setw(4) << json_net;
     file.close();
-};
+}
 
 void default_weight_init(Network& net)
 {

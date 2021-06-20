@@ -103,7 +103,7 @@ void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_e
     // can't be any smaller than online learning or bigger than training data
     size_t min = 1;
     size_t max = hy.training_data->get_x().n_cols;
-    for (int i = 0; i < depth; ++i)
+    for (size_t i = 0; i < depth; ++i)
     {
         size_t middle = hy.mini_batch_size;
         // between min and middle
@@ -207,7 +207,7 @@ void default_fine_surf(const Network& net, HyperParameter& hy, float& h_paramete
     hy.max_epochs            = first_epochs;
     hy.monitor_eval_accuracy = true;
 
-    for (int i = 0; i < depth; ++i)
+    for (size_t i = 0; i < depth; ++i)
     {
         float middle = h_parameter;
         // between min and middle

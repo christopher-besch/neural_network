@@ -50,7 +50,7 @@ class CrossEntropyCost : public Cost
         // sum of all rows
         return arma::sum(result);
     }
-    virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) override
+    virtual arma::fmat error(const arma::fmat&, const arma::fmat& a, const arma::fmat& y) override
     {
         return a - y;
     }

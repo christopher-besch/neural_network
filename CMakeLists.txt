@@ -12,6 +12,18 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog")
 
 # in-house dependencies
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/utils")
+
+# use warnings and multi threaded
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} /MP2 /DWIN32_LEAN_AND_MEAN /DNOMINMAX")
+endif()
+
+# neural net static lib
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/neural_net")
 
 # executables
