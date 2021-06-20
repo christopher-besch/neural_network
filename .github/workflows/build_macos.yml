@@ -1,0 +1,47 @@
+name: Build macOS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            name: "macOS Debug",
+            artifact: "macos_debug.tar.xz",
+            build_type: "debug",
+          }
+          - {
+            name: "Ubuntu Debug",
+            artifact: "macos_debug.tar.xz",
+            build_type: "debug",
+          }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+            submodules: recursive
+
+      - name: Configure CMake
+        run: |
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.config.build_type}}
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{matrix.config.build_type}} -j2
+
+      - name: Prepare upload
+        run: |
+          tar cfz ${{matrix.config.artifact}} build
+
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          path: ${{matrix.config.artifact}}
+          name: ${{matrix.config.artifact}}
