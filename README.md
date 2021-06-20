@@ -1,7 +1,7 @@
 # Neural Networks and Deep Learning
  
-[![Build Windows](https://github.com/christopher-besch/neural_network/workflows/build_windows/badge.svg)](https://github.com/SkillerRaptor/build_windows/blob/master/.github/workflows/build_windows.yml)
-[![Build Linux](https://github.com/christopher-besch/neural_network/workflows/build_linux/badge.svg)](https://github.com/christopher-besch/build_linux/blob/master/.github/workflows/build_linux.yml)
+[![Build Windows](https://github.com/christopher-besch/neural_network/workflows/Build%20Windows/badge.svg)](https://github.com/christopher-besch/neural_network/actions/workflows/build_windows.yml)
+[![Build Linux](https://github.com/christopher-besch/neural_network/workflows/Build%20Linux/badge.svg)](https://github.com/christopher-besch/neural_network/actions/workflows/build_linux.yml)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](https://github.com/christopher-besch/neural_network/blob/main/LICENSE)
 
 Some Experiments with Neural Networks and Deep Learning.
