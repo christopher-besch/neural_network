@@ -2,9 +2,9 @@ name: Build macOS
 
 on:
   push:
-    branches: [ main ]
+    branches: [ fuck_apple ]
   pull_request:
-    branches: [ main ]
+    branches: [ fuck_apple ]
 
 jobs:
   build:
