@@ -36,7 +36,7 @@ jobs:
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.config.build_type}} -j2
 
-      - name: Prepare upload
+      - name: Prepare Upload
         run: |
           tar cfz ${{matrix.config.artifact}} build
 

@@ -46,7 +46,7 @@ jobs:
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.config.build_type}}
 
-      - name: Prepare upload
+      - name: Prepare Upload
         run: |
           7z a -tzip ${{matrix.config.artifact}} build/*
 
