@@ -27,11 +27,11 @@ void load_json_network(Network& net, const std::string& json_path)
     file >> json_net;
     file.close();
 
-    net.sizes      = static_cast<std::vector<size_t>>(json_net["sizes"]);
+    net.sizes      = json_net["sizes"].get<std::vector<size_t>>();
     net.num_layers = net.sizes.size();
 
     // loop over layer-by-layer weight sets
-    for (const std::vector<std::vector<float>>& w : static_cast<std::vector<std::vector<std::vector<float>>>>(json_net["weights"]))
+    for (const std::vector<std::vector<float>>& w : json_net["weights"].get<std::vector<std::vector<std::vector<float>>>>())
     {
         // create matrix of weights for this layer-by-layer part
         arma::fmat weight(w[0].size(), w.size());
@@ -43,7 +43,7 @@ void load_json_network(Network& net, const std::string& json_path)
         net.weights.push_back(weight);
     }
 
-    for (const std::vector<float>& b : static_cast<std::vector<std::vector<float>>>(json_net["biases"]))
+    for (const std::vector<float>& b : json_net["biases"].get<std::vector<std::vector<float>>>())
         net.biases.push_back(b);
 
     net.cost = Cost::get(json_net["cost"]);
