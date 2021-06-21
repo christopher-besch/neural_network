@@ -1,7 +1,25 @@
 #include "read_mnist.h"
 
 #include "neural_net.h"
-#include "utils.h"
+
+inline bool is_little_endian()
+{
+    // gets stored as 00000000 00000001 <- big endian
+    // or 10000000 00000000 <- little endian
+    uint16_t num = 1;
+    // char* points to first byte
+    return *reinterpret_cast<char*>(&num) == 1;
+}
+
+// swap order of bytes
+inline int32_t swap(uint32_t num)
+{
+    int32_t result = num & 0xff;
+    result         = (result << 8) | ((num >> 8) & 0xff);
+    result         = (result << 8) | ((num >> 16) & 0xff);
+    result         = (result << 8) | ((num >> 24) & 0xff);
+    return result;
+}
 
 inline int32_t get_int32_t(std::ifstream& file)
 {

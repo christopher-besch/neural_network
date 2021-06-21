@@ -10,11 +10,10 @@ using json = nlohmann::json;
 
 #include <cmath>
 #include <cstdint>
+#include <iomanip>
 #include <memory>
+#include <ostream>
 #include <string>
-#include <vector>
-
-#include "utils.h"
-#include "vector_operations.h"
 
 #include "log.h"
+#include "utils.h"

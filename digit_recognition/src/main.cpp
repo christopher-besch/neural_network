@@ -1,7 +1,11 @@
 #include "neural_net.h"
 #include <iostream>
 
-#include "utils.h"
+#if defined(_WIN32) || defined(_WIN64)
+#define file_slash '\\'
+#else
+#define file_slash '/'
+#endif
 
 void print_img(const arma::fvec& img)
 {

@@ -48,7 +48,8 @@ void Log::init()
     }
     catch (const spdlog::spdlog_ex& ex)
     {
-        raise_error("Log init failed: " << ex.what());
+        std::cerr << "Log init failed: " << ex.what() << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 }
 } // namespace NeuralNet

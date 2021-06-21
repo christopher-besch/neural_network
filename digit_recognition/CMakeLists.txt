@@ -5,4 +5,4 @@ add_executable(digit_recognition ${SOURCES})
 target_include_directories(digit_recognition
                            PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-target_link_libraries(digit_recognition PRIVATE neural_net utils)
+target_link_libraries(digit_recognition PRIVATE neural_net)
