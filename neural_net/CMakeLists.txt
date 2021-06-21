@@ -7,7 +7,7 @@ target_include_directories(neural_net PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_precompile_headers(neural_net PRIVATE
                           "${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h")
 
-target_link_libraries(neural_net PRIVATE utils nlohmann_json)
+target_link_libraries(neural_net PRIVATE nlohmann_json)
 # armadillo is needed by client
 target_link_libraries(neural_net PUBLIC armadillo spdlog)
 

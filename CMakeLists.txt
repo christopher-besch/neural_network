@@ -10,9 +10,6 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/armadillo")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog")
 
-# in-house dependencies
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/utils")
-
 # use warnings and multi threaded
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
