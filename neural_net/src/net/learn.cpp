@@ -150,8 +150,8 @@ void update_learn_status(const Network& net, HyperParameter& hy)
 void sgd(Network& net, HyperParameter& hy)
 {
     // info block
-    log_learn_extra("Using stochastic gradient descent:");
-    log_learn_extra(hy.to_str());
+    log_learn_general("Using stochastic gradient descent:");
+    log_learn_general(hy.to_str());
 
     auto begin = std::chrono::high_resolution_clock::now();
     hy.is_valid();
@@ -189,9 +189,21 @@ void sgd(Network& net, HyperParameter& hy)
 
         // learning rate schedule
         // when there aren't enough epochs yet, don't do anything
-        if (hy.no_improvement_in && epochs_since_last_reduction >= hy.no_improvement_in)
+        if (hy.learning_schedule_type != LearningScheduleType::None && epochs_since_last_reduction >= hy.no_improvement_in)
         {
-            float sum_delta = get_sum_delta(hy.test_accuracies.end() - hy.no_improvement_in, hy.test_accuracies.end());
+            float sum_delta;
+            switch (hy.learning_schedule_type)
+            {
+            case LearningScheduleType::TestAccuracy:
+                sum_delta = get_sum_delta(hy.test_accuracies.end() - hy.no_improvement_in, hy.test_accuracies.end());
+                break;
+            case LearningScheduleType::EvalAccuracy:
+                sum_delta = get_sum_delta(hy.eval_accuracies.end() - hy.no_improvement_in, hy.eval_accuracies.end());
+                break;
+            case LearningScheduleType::None:
+                raise_critical("learning rate schedule broken");
+                break;
+            }
             // no improvement?
             if (sum_delta <= 0.0f)
             {
@@ -199,11 +211,11 @@ void sgd(Network& net, HyperParameter& hy)
                 // reset
                 epochs_since_last_reduction = 0;
 
-                log_learn_extra("No improvement ({}) in last {} epochs; reducing learning rate to: {}", sum_delta, hy.no_improvement_in, eta);
+                log_learn_general("No improvement ({}) in last {} epochs; reducing learning rate to: {}", sum_delta, hy.no_improvement_in, eta);
 
                 if (hy.stop_eta_fraction != -1.0f && eta < stop_eta)
                 {
-                    log_learn_extra("Learning rate dropped below 1/{}; learning terminated.", hy.stop_eta_fraction);
+                    log_learn_general("Learning rate dropped below 1/{}; learning terminated.", hy.stop_eta_fraction);
                     quit = true;
                 }
             }
@@ -212,7 +224,7 @@ void sgd(Network& net, HyperParameter& hy)
         }
         if (epoch >= hy.max_epochs)
         {
-            log_learn_extra("Maximum epochs exceeded; learning terminated");
+            log_learn_general("Maximum epochs exceeded; learning terminated");
             quit = true;
         }
         ++epoch;

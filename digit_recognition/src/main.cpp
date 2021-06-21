@@ -26,31 +26,6 @@ int main(int argc, const char* argv[])
     NeuralNet::Log::set_client_level(spdlog::level::trace);
     if (argc < 2)
         raise_critical("Please specify the path to the data as the first parameter.");
-    // if (argc >= 3)
-    //     switch (argv[2][0])
-    //     {
-    //     case 't':
-    //         NeuralNet::Log::set_level(spdlog::level::trace);
-    //         break;
-    //     case 'i':
-    //         NeuralNet::Log::set_level(spdlog::level::info);
-    //         break;
-    //     case 'd':
-    //         NeuralNet::Log::set_level(spdlog::level::debug);
-    //         break;
-    //     case 'w':
-    //         NeuralNet::Log::set_level(spdlog::level::warn);
-    //         break;
-    //     case 'e':
-    //         NeuralNet::Log::set_level(spdlog::level::err);
-    //         break;
-    //     case 'c':
-    //         NeuralNet::Log::set_level(spdlog::level::critical);
-    //         break;
-    //     default:
-    //         NeuralNet::raise_critical("undefined log level: '" << argv[2] << "'");
-    //     }
-    // load data
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
 
@@ -68,51 +43,40 @@ int main(int argc, const char* argv[])
     NeuralNet::Data cp_eval_data     = eval_data.get_sub(0, 1000);
 
 #if 1
+    // create nework
     NeuralNet::Network net;
     create_network(net, { 784, 30, 10 }, NeuralNet::Cost::get("cross_entropy"));
 
-    // set monitoring
-    // HyperParameter hy;
-    // hy.mini_batch_size = 10;
-    // hy.init_eta          = 0.1f;
-    // hy.max_epochs        = 1000;
-    // hy.stop_eta_fraction = 128.0f;
-    // hy.no_improvement_in = 10;
-    // hy.mu                = 0.0f;
-    // hy.lambda_l1         = 0.0f;
-    // hy.lambda_l2         = 5.0f;
-
+    // set some hyper parameters
     NeuralNet::HyperParameter hy;
+    hy.lambda_l1     = 0.0f;
+    hy.training_data = &cp_training_data;
+    hy.test_data     = &cp_test_data;
+    hy.eval_data     = &cp_eval_data;
+
+    // coarse hyper surf
+    NeuralNet::Log::set_learn_level(spdlog::level::warn);
+    NeuralNet::Log::set_hyper_level(spdlog::level::trace);
+    NeuralNet::coarse_hyper_surf(net, hy);
+
+    // fine hyper surf
+    hy.max_epochs        = 1000;
     hy.no_improvement_in = 20;
     hy.stop_eta_fraction = 512.0f;
-    hy.lambda_l1         = 0.0f;
-    hy.training_data     = &cp_training_data;
-    hy.test_data         = &cp_test_data;
-    hy.eval_data         = &cp_eval_data;
-
-    NeuralNet::Log::set_learn_level(spdlog::level::debug);
-    NeuralNet::Log::set_hyper_level(spdlog::level::trace);
-    hyper_surf(net, hy);
-    // hy.init_eta        = 2.6982f;
-    // hy.lambda_l2       = 11.9118f;
-    // hy.mu              = 0.0713348f;
-    // hy.mini_batch_size = 22;
-
-    hy.max_epochs = 1000;
-
-    hy.training_data          = &training_data;
-    hy.test_data              = &test_data;
-    hy.eval_data              = &eval_data;
-    hy.monitor_test_cost      = false;
+    hy.training_data     = &training_data;
+    hy.test_data         = &test_data;
+    hy.eval_data         = &eval_data;
+    NeuralNet::Log::set_learn_level(spdlog::level::trace);
+    NeuralNet::Log::set_learn_level(spdlog::level::trace);
+    hy.reset_monitor();
     hy.monitor_test_accuracy  = true;
-    hy.monitor_eval_cost      = false;
-    hy.monitor_eval_accuracy  = false;
-    hy.monitor_train_cost     = false;
-    hy.monitor_train_accuracy = false;
+    hy.learning_schedule_type = NeuralNet::LearningScheduleType::EvalAccuracy;
+    NeuralNet::bounce_hyper_surf(net, hy, 2, 3);
 
-    // learn network
-    NeuralNet::Log::set_learn_level(spdlog::level::trace);
-    NeuralNet::Log::set_learn_level(spdlog::level::trace);
+    // learn
+    hy.reset_monitor();
+    hy.monitor_test_accuracy  = true;
+    hy.learning_schedule_type = NeuralNet::LearningScheduleType::TestAccuracy;
     sgd(net, hy);
     save_json(net, "out_net.json");
 #else

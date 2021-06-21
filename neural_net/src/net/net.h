@@ -40,6 +40,13 @@ inline std::ostream& operator<<(std::ostream& out, const Network& net)
     return out;
 }
 
+enum class LearningScheduleType : uint8_t
+{
+    None = 0,
+    TestAccuracy,
+    EvalAccuracy
+};
+
 // data in hyper-space
 struct HyperParameter
 {
@@ -51,6 +58,15 @@ struct HyperParameter
     // optional
     // stop after these epchs regardless of any schedule
     size_t max_epochs = 200;
+
+    // momentum co-efficient
+    // 0 -> full friction, like without momentum
+    float mu = 0.0f;
+    // regularization parameter
+    float lambda_l1 = 0.0f;
+    float lambda_l2 = 0.0f;
+
+    LearningScheduleType learning_schedule_type = LearningScheduleType::None;
     // half eta after not improving in that many epochs
     // must be at least 2
     // 0 -> disable
@@ -58,12 +74,6 @@ struct HyperParameter
     // 0 -> disabled
     // ignored if learning rate schedule disabled
     float stop_eta_fraction = 0.0f;
-    // momentum co-efficient
-    // 0 -> full friction, like without momentum
-    float mu = 0.0f;
-    // regularization parameter
-    float lambda_l1 = 0.0f;
-    float lambda_l2 = 0.0f;
 
     const Data* training_data = nullptr;
     const Data* test_data     = nullptr;
@@ -111,14 +121,27 @@ struct HyperParameter
         if ((monitor_eval_cost || monitor_eval_accuracy) && eval_data == nullptr)
             raise_critical("Evaluation data is required for requested monitoring.");
 
-        if (no_improvement_in)
+        switch (learning_schedule_type)
         {
+        case LearningScheduleType::TestAccuracy:
             if (test_data == nullptr)
                 raise_critical("Test data is required for early stopping and learning rate schedule.");
             if (!monitor_test_accuracy)
                 raise_critical("The test data accuracy has to be monitored for early stopping and learning rate schedule.");
+            break;
+        case LearningScheduleType::EvalAccuracy:
+            if (eval_data == nullptr)
+                raise_critical("Evaluation data is required for early stopping and learning rate schedule.");
+            if (!monitor_eval_accuracy)
+                raise_critical("The evaluation data accuracy has to be monitored for early stopping and learning rate schedule.");
+            break;
+        case LearningScheduleType::None:
+            break;
+        }
+        if (learning_schedule_type != LearningScheduleType::None)
+        {
             if (no_improvement_in < 2)
-                raise_critical("no_improvement_in has to be at least two or not given.");
+                raise_critical("no_improvement_in has to be at least two.");
         }
 
         if (!mini_batch_size)
@@ -144,15 +167,24 @@ struct HyperParameter
 
         out << "\tmini batch size: " << mini_batch_size << std::endl;
 
-        if (no_improvement_in)
+        switch (learning_schedule_type)
         {
-            out << "\tUsing learning rate schedule with starting eta: " << init_eta << std::endl;
+        case LearningScheduleType::None:
+            out << "\tUsing learning rate schedule on test data with starting eta: " << init_eta << std::endl;
             out << "\thalf eta when test accuracy didn't improve in the last " << no_improvement_in << " epochs" << std::endl;
             if (stop_eta_fraction)
                 out << "\tStopping early when eta drops below: 1/" << stop_eta_fraction << std::endl;
-        }
-        else
+            break;
+        case LearningScheduleType::EvalAccuracy:
+            out << "\tUsing learning rate schedule on evaluation data with starting eta: " << init_eta << std::endl;
+            out << "\thalf eta when evaluation accuracy didn't improve in the last " << no_improvement_in << " epochs" << std::endl;
+            if (stop_eta_fraction)
+                out << "\tStopping early when eta drops below: 1/" << stop_eta_fraction << std::endl;
+            break;
+        case LearningScheduleType::TestAccuracy:
             out << "\tusing constant eta: " << init_eta << std::endl;
+            break;
+        }
         out << "\tstop at max epochs: " << max_epochs << std::endl;
 
         out << "\tmu: " << mu << std::endl;

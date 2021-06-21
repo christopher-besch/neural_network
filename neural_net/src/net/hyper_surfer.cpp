@@ -12,13 +12,13 @@ inline void test(const Network& net, HyperParameter& hy)
     sgd(current_net, hy);
 }
 
-void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs, size_t surf_depth)
+void coarse_hyper_surf(const Network& net, HyperParameter& hy)
 {
-    log_hyper_general("Hyper surfing...");
+    log_hyper_general("Coarse Hyper Surfing...");
     // using no learning rate schedule
-    size_t no_improvement_in_buffer = hy.no_improvement_in;
-    size_t max_epochs_buffer        = hy.max_epochs;
-    hy.no_improvement_in            = 0;
+    size_t               max_epochs_buffer             = hy.max_epochs;
+    LearningScheduleType learning_schedule_type_buffer = hy.learning_schedule_type;
+    hy.learning_schedule_type                          = LearningScheduleType::None;
     // initial parameters, good default values
     hy.mini_batch_size = 50;
     log_hyper_general("Find order of magnitude of eta threshold...");
@@ -26,38 +26,17 @@ void hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs, size_
     // use constant eta for further hyper surfing
     hy.init_eta /= 2.0f;
 
-    log_hyper_general("Coarse surf Lambda...");
+    log_hyper_general("Coarse lambda surf...");
     hy.lambda_l2 = 1.0f;
     default_coarse_surf(net, hy, hy.lambda_l2);
 
     log_hyper_general("Surf mini batch size...");
     mini_batch_size_surf(net, hy);
 
-    log_hyper_general("bounce hyper surfing...");
-    bounce_hyper_surf(net, hy, 30, fine_surfs, surf_depth);
-
     // use default options again
-    hy.no_improvement_in = no_improvement_in_buffer;
-    hy.max_epochs        = max_epochs_buffer;
     hy.init_eta *= 2.0f;
-
-    log_hyper_general("Hyper Surfer terminated:\n\teta threshold: {}\n\tL2 regularization parameter: {}\n\tmomentum co-efficient: {}\n\tmini batch size: {}",
-                      hy.init_eta, hy.lambda_l2, hy.mu, hy.mini_batch_size);
-}
-
-void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t fine_surfs, size_t surf_depth)
-{
-    hy.mu = 0.5f;
-    hy.reset_monitor();
-    for (size_t i = 0; i < fine_surfs; ++i)
-    {
-        log_hyper_general("{}. fine mu adjustment...", i);
-        default_fine_surf(net, hy, hy.mu, 0.0f, 1.0f, first_epochs, surf_depth);
-        log_hyper_general("{}. fine eta adjustment...", i);
-        default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 1.5f, hy.init_eta * 1.5f, first_epochs, surf_depth);
-        log_hyper_general("{}. fine lambda adjustment...", i);
-        default_fine_surf(net, hy, hy.lambda_l2, hy.lambda_l2 / 1.5f, hy.lambda_l2 * 1.5f, first_epochs, surf_depth);
-    }
+    hy.max_epochs             = max_epochs_buffer;
+    hy.learning_schedule_type = learning_schedule_type_buffer;
 }
 
 void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs, size_t max_tries)
@@ -210,10 +189,23 @@ void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta, si
     raise_critical("Failed to find order of magnitude of eta.");
 }
 
-void default_fine_surf(const Network& net, HyperParameter& hy, float& h_parameter, float min, float max, size_t first_epochs, size_t depth)
+void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs, size_t surf_depth)
 {
-    hy.reset_monitor();
-    hy.max_epochs            = first_epochs;
+    log_hyper_general("Bounce Hyper Surf...");
+    hy.mu = 0.5f;
+    for (size_t i = 0; i < fine_surfs; ++i)
+    {
+        log_hyper_general("{}. fine mu adjustment...", i);
+        default_fine_surf(net, hy, hy.mu, 0.0f, 1.0f, surf_depth);
+        log_hyper_general("{}. fine eta adjustment...", i);
+        default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 1.5f, hy.init_eta * 1.5f, surf_depth);
+        log_hyper_general("{}. fine lambda adjustment...", i);
+        default_fine_surf(net, hy, hy.lambda_l2, hy.lambda_l2 / 1.5f, hy.lambda_l2 * 1.5f, surf_depth);
+    }
+}
+
+void default_fine_surf(const Network& net, HyperParameter& hy, float& h_parameter, float min, float max, size_t depth)
+{
     hy.monitor_eval_accuracy = true;
 
     for (size_t i = 0; i < depth; ++i)
