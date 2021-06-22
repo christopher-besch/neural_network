@@ -4,6 +4,14 @@
 
 namespace NeuralNet
 {
+enum class LogLevel
+{
+    Extra   = spdlog::level::trace,
+    General = spdlog::level::debug,
+    Warn    = spdlog::level::warn,
+    Error   = spdlog::level::err
+};
+
 class Log
 {
 private:
@@ -34,17 +42,17 @@ public:
         return s_error_logger;
     }
 
-    static void set_learn_level(spdlog::level::level_enum log_level)
+    static void set_learn_level(LogLevel log_level)
     {
-        s_learn_logger->set_level(log_level);
+        s_learn_logger->set_level(static_cast<spdlog::level::level_enum>(log_level));
     }
-    static void set_hyper_level(spdlog::level::level_enum log_level)
+    static void set_hyper_level(LogLevel log_level)
     {
-        s_hyper_logger->set_level(log_level);
+        s_hyper_logger->set_level(static_cast<spdlog::level::level_enum>(log_level));
     }
-    static void set_client_level(spdlog::level::level_enum log_level)
+    static void set_client_level(LogLevel log_level)
     {
-        s_client_logger->set_level(log_level);
+        s_client_logger->set_level(static_cast<spdlog::level::level_enum>(log_level));
     }
 };
 

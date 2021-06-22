@@ -23,7 +23,7 @@ void print_img(const arma::fvec& img)
 int main(int argc, const char* argv[])
 {
     NeuralNet::init();
-    NeuralNet::Log::set_client_level(spdlog::level::trace);
+    NeuralNet::Log::set_client_level(NeuralNet::LogLevel::Extra);
     if (argc < 2)
         raise_critical("Please specify the path to the data as the first parameter.");
     std::stringstream root_data_path;
@@ -55,27 +55,30 @@ int main(int argc, const char* argv[])
     hy.eval_data     = &cp_eval_data;
 
     // coarse hyper surf
-    NeuralNet::Log::set_learn_level(spdlog::level::warn);
-    NeuralNet::Log::set_hyper_level(spdlog::level::trace);
+    NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Warn);
+    NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::Extra);
     NeuralNet::coarse_hyper_surf(net, hy);
 
     // fine hyper surf
-    hy.max_epochs        = 1000;
-    hy.no_improvement_in = 20;
-    hy.stop_eta_fraction = 512.0f;
-    hy.training_data     = &training_data;
-    hy.test_data         = &test_data;
-    hy.eval_data         = &eval_data;
-    NeuralNet::Log::set_learn_level(spdlog::level::trace);
-    NeuralNet::Log::set_learn_level(spdlog::level::trace);
     hy.reset_monitor();
-    hy.monitor_test_accuracy  = true;
+    hy.monitor_eval_accuracy  = true;
     hy.learning_schedule_type = NeuralNet::LearningScheduleType::EvalAccuracy;
+    hy.max_epochs             = 200;
+    hy.no_improvement_in      = 5;
+    hy.stop_eta_fraction      = 128.0f;
+    hy.training_data          = &training_data;
+    hy.test_data              = &test_data;
+    hy.eval_data              = &eval_data;
+    NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
+    NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
     NeuralNet::bounce_hyper_surf(net, hy, 2, 3);
 
     // learn
     hy.reset_monitor();
     hy.monitor_test_accuracy  = true;
+    hy.max_epochs             = 1000;
+    hy.no_improvement_in      = 10;
+    hy.stop_eta_fraction      = 512.0f;
     hy.learning_schedule_type = NeuralNet::LearningScheduleType::TestAccuracy;
     sgd(net, hy);
     save_json(net, "out_net.json");
