@@ -1,4 +1,5 @@
 #include "neural_net.h"
+#include "read_mnist.h"
 
 #include <iostream>
 
