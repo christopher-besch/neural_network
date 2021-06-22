@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC  -O2 -O3 -DNDEBUG  -Wl,--no-as-needed -shared -Wl,-soname,libarmadillo.so.10 -o libarmadillo.so.10.5.2 CMakeFiles/armadillo.dir/src/wrapper1.cpp.o CMakeFiles/armadillo.dir/src/wrapper2.cpp.o  -lblas -llapack 

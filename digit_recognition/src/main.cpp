@@ -45,10 +45,32 @@ int main(int argc, const char* argv[]) {
 #if 1
     // create nework
     NeuralNet::Network net;
-    create_network(net, {784, 30, 10}, NeuralNet::Cost::get("cross_entropy"));
+    create_network(net, {784, 100, 10}, NeuralNet::Cost::get("cross_entropy"));
 
     // set some hyper parameters
     NeuralNet::HyperParameter hy;
+    hy.training_data         = &training_data;
+    hy.test_data             = &test_data;
+    hy.eval_data             = &eval_data;
+    hy.monitor_eval_accuracy = true;
+    // hy.learning_schedule_type = NeuralNet::LearningScheduleType::None;
+    // hy.max_epochs             = 60;
+    // hy.mini_batch_size        = 10;
+    // hy.init_eta               = 0.1f;
+    // hy.lambda_l2              = 5.0f;
+
+    hy.learning_schedule_type = NeuralNet::LearningScheduleType::EvalAccuracy;
+    hy.max_epochs             = 500;
+    hy.mini_batch_size        = 29;
+    hy.init_eta               = 1.0686059f;
+    hy.lambda_l2              = 0.17070314f;
+    hy.mu                     = 0.0234375f;
+    hy.no_improvement_in      = 10;
+    hy.stop_eta_fraction      = 128;
+    NeuralNet::sgd(net, hy);
+
+    return 0;
+
     hy.lambda_l1     = 0.0f;
     hy.training_data = &cp_training_data;
     hy.test_data     = &cp_test_data;

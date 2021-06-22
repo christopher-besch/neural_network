@@ -26,7 +26,8 @@ inline std::ostream& operator<<(std::ostream& out, const Network& net) {
     out << "<Network: sizes: ";
     for(size_t size: net.sizes)
         out << size << " ";
-    out << std::endl << "biases:" << std::endl;
+    out << std::endl
+        << "biases:" << std::endl;
     for(const arma::fvec& bias: net.biases)
         out << bias.n_rows << " " << bias.n_cols << std::endl;
     out << "weights:" << std::endl;
@@ -36,7 +37,9 @@ inline std::ostream& operator<<(std::ostream& out, const Network& net) {
     return out;
 }
 
-enum class LearningScheduleType : uint8_t { None = 0, TestAccuracy, EvalAccuracy };
+enum class LearningScheduleType : uint8_t { None = 0,
+                                            TestAccuracy,
+                                            EvalAccuracy };
 
 // data in hyper-space
 struct HyperParameter {
@@ -109,15 +112,13 @@ struct HyperParameter {
             if(test_data == nullptr)
                 raise_critical("Test data is required for early stopping and learning rate schedule.");
             if(!monitor_test_accuracy)
-                raise_critical(
-                    "The test data accuracy has to be monitored for early stopping and learning rate schedule.");
+                raise_critical("The test data accuracy has to be monitored for early stopping and learning rate schedule.");
             break;
         case LearningScheduleType::EvalAccuracy:
             if(eval_data == nullptr)
                 raise_critical("Evaluation data is required for early stopping and learning rate schedule.");
             if(!monitor_eval_accuracy)
-                raise_critical(
-                    "The evaluation data accuracy has to be monitored for early stopping and learning rate schedule.");
+                raise_critical("The evaluation data accuracy has to be monitored for early stopping and learning rate schedule.");
             break;
         case LearningScheduleType::None:
             break;
@@ -125,6 +126,8 @@ struct HyperParameter {
         if(learning_schedule_type != LearningScheduleType::None) {
             if(no_improvement_in < 2)
                 raise_critical("no_improvement_in has to be at least two.");
+            if(!stop_eta_fraction)
+                raise_critical("stop_eta_fraction has to be defined.");
         }
 
         if(!mini_batch_size)

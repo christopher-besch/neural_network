@@ -175,10 +175,15 @@ void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs
     for(size_t i = 0; i < fine_surfs; ++i) {
         log_hyper_general("{}. fine mu adjustment...", i);
         default_fine_surf(net, hy, hy.mu, 0.0f, 1.0f, surf_depth);
+        log_hyper_general("mu set to: {}", hy.mu);
+
         log_hyper_general("{}. fine init_eta adjustment...", i);
         default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 1.5f, hy.init_eta * 1.5f, surf_depth);
+        log_hyper_general("init_eta set to: {}", hy.init_eta);
+
         log_hyper_general("{}. fine lambda adjustment...", i);
         default_fine_surf(net, hy, hy.lambda_l2, hy.lambda_l2 / 1.5f, hy.lambda_l2 * 1.5f, surf_depth);
+        log_hyper_general("lambda_l2 set to: {}", hy.lambda_l2);
     }
     log_hyper_general("Bounce Hyper surf complete:");
     log_hyper_general("\tmu: {}", hy.mu);
