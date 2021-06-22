@@ -1,4 +1,5 @@
 #include "neural_net.h"
+
 #include <iostream>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -7,12 +8,9 @@
 #define file_slash '/'
 #endif
 
-void print_img(const arma::fvec& img)
-{
-    for (int y = 0; y < 28; ++y)
-    {
-        for (int x = 0; x < 28; ++x)
-        {
+void print_img(const arma::fvec& img) {
+    for(int y = 0; y < 28; ++y) {
+        for(int x = 0; x < 28; ++x) {
             float pixel = img[28 * y + x];
             std::cout << (pixel > 0.5f ? '#' : ' ');
         }
@@ -20,17 +18,18 @@ void print_img(const arma::fvec& img)
     }
 }
 
-int main(int argc, const char* argv[])
-{
+int main(int argc, const char* argv[]) {
     NeuralNet::init();
     NeuralNet::Log::set_client_level(NeuralNet::LogLevel::Extra);
-    if (argc < 2)
+    if(argc < 2)
         raise_critical("Please specify the path to the data as the first parameter.");
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "mnist" << file_slash;
 
-    NeuralNet::Data big_data      = load_data(root_data_path.str() + std::string("training_images"), root_data_path.str() + std::string("training_labels"));
-    NeuralNet::Data test_data     = load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
+    NeuralNet::Data big_data = load_data(root_data_path.str() + std::string("training_images"),
+                                         root_data_path.str() + std::string("training_labels"));
+    NeuralNet::Data test_data =
+        load_data(root_data_path.str() + std::string("test_images"), root_data_path.str() + std::string("test_labels"));
     NeuralNet::Data training_data = big_data.get_sub(0, 50000);
     NeuralNet::Data eval_data     = big_data.get_sub(50000, 10000);
 
@@ -45,7 +44,7 @@ int main(int argc, const char* argv[])
 #if 1
     // create nework
     NeuralNet::Network net;
-    create_network(net, { 784, 30, 10 }, NeuralNet::Cost::get("cross_entropy"));
+    create_network(net, {784, 30, 10}, NeuralNet::Cost::get("cross_entropy"));
 
     // set some hyper parameters
     NeuralNet::HyperParameter hy;
@@ -84,9 +83,8 @@ int main(int argc, const char* argv[])
     save_json(net, "out_net.json");
 #else
     // switched
-    Network* net = create_network({ 10, 30, 784 }, Cost::get("cross_entropy"));
-    sgd(net,
-        &switched_training_data,
+    Network* net = create_network({10, 30, 784}, Cost::get("cross_entropy"));
+    sgd(net, &switched_training_data,
         5,    // epochs
         10,   // mini_batch_size
         0.5f, // eta
@@ -94,19 +92,18 @@ int main(int argc, const char* argv[])
         0.0f, // mu
         5.0f, // lambda for L1 regularization
         0.0f, // lambda for L2 regularization
-        nullptr,
-        nullptr);
+        nullptr, nullptr);
 
-    arma::fmat input0 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    arma::fmat input1 = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
-    arma::fmat input2 = { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 };
-    arma::fmat input3 = { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
-    arma::fmat input4 = { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 };
-    arma::fmat input5 = { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
-    arma::fmat input6 = { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 };
-    arma::fmat input7 = { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 };
-    arma::fmat input8 = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 };
-    arma::fmat input9 = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+    arma::fmat input0 = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    arma::fmat input1 = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+    arma::fmat input2 = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0};
+    arma::fmat input3 = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
+    arma::fmat input4 = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
+    arma::fmat input5 = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+    arma::fmat input6 = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
+    arma::fmat input7 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
+    arma::fmat input8 = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
+    arma::fmat input9 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
     input0            = input0.t();
     input1            = input1.t();
     input2            = input2.t();

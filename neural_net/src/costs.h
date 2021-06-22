@@ -3,10 +3,8 @@
 
 #include <memory>
 
-namespace NeuralNet
-{
-class Cost
-{
+namespace NeuralNet {
+class Cost {
 public:
     virtual ~Cost() = default;
     // only for test data
@@ -22,41 +20,27 @@ public:
     static std::shared_ptr<Cost> get(const std::string& name);
 };
 
-class QuadraticCost : public Cost
-{
-    virtual float fn(const arma::fvec& a, const arma::fvec& y) override
-    {
+class QuadraticCost: public Cost {
+    virtual float fn(const arma::fvec& a, const arma::fvec& y) override {
         // euclidean distance to perfect result = null vector
         return arma::norm(0.5f * arma::square(a - y));
     }
-    virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) override
-    {
+    virtual arma::fmat error(const arma::fmat& z, const arma::fmat& a, const arma::fmat& y) override {
         return (a - y) % sigmoid_prime(z);
     }
 
-    virtual std::string to_str() override
-    {
-        return "quadratic";
-    }
+    virtual std::string to_str() override { return "quadratic"; }
 };
 
-class CrossEntropyCost : public Cost
-{
-    virtual float fn(const arma::fvec& a, const arma::fvec& y) override
-    {
+class CrossEntropyCost: public Cost {
+    virtual float fn(const arma::fvec& a, const arma::fvec& y) override {
         arma::fvec result = -y % arma::log(a) - (1 - y) % arma::log(1 - a);
         // take care of log of numbers close to 0
         result.replace(arma::datum::nan, 0.0f);
         // sum of all rows
         return arma::sum(result);
     }
-    virtual arma::fmat error(const arma::fmat&, const arma::fmat& a, const arma::fmat& y) override
-    {
-        return a - y;
-    }
-    virtual std::string to_str() override
-    {
-        return "cross_entropy";
-    }
+    virtual arma::fmat  error(const arma::fmat&, const arma::fmat& a, const arma::fmat& y) override { return a - y; }
+    virtual std::string to_str() override { return "cross_entropy"; }
 };
 } // namespace NeuralNet

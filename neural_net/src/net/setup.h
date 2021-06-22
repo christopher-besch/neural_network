@@ -2,11 +2,11 @@
 #include "costs.h"
 #include "net.h"
 
-namespace NeuralNet
-{
+namespace NeuralNet {
 // sizes of layers, first is input, last is output
 // beware of memory leaks
-void create_network(Network& net, const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost = std::make_shared<CrossEntropyCost>());
+void create_network(Network& net, const std::vector<size_t>& sizes,
+                    std::shared_ptr<Cost> cost = std::make_shared<CrossEntropyCost>());
 
 // laod from json
 // beware of memory leaks

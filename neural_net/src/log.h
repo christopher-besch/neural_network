@@ -2,18 +2,15 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-namespace NeuralNet
-{
-enum class LogLevel
-{
+namespace NeuralNet {
+enum class LogLevel {
     Extra   = spdlog::level::trace,
     General = spdlog::level::debug,
     Warn    = spdlog::level::warn,
     Error   = spdlog::level::err
 };
 
-class Log
-{
+class Log {
 private:
     // std::cout and file
     static std::shared_ptr<spdlog::logger> s_learn_logger;
@@ -25,52 +22,35 @@ private:
 public:
     static void init();
 
-    static std::shared_ptr<spdlog::logger>& get_learn_logger()
-    {
-        return s_learn_logger;
-    }
-    static std::shared_ptr<spdlog::logger>& get_hyper_logger()
-    {
-        return s_hyper_logger;
-    }
-    static std::shared_ptr<spdlog::logger>& get_client_logger()
-    {
-        return s_client_logger;
-    }
-    static std::shared_ptr<spdlog::logger>& get_error_logger()
-    {
-        return s_error_logger;
-    }
+    static std::shared_ptr<spdlog::logger>& get_learn_logger() { return s_learn_logger; }
+    static std::shared_ptr<spdlog::logger>& get_hyper_logger() { return s_hyper_logger; }
+    static std::shared_ptr<spdlog::logger>& get_client_logger() { return s_client_logger; }
+    static std::shared_ptr<spdlog::logger>& get_error_logger() { return s_error_logger; }
 
-    static void set_learn_level(LogLevel log_level)
-    {
+    static void set_learn_level(LogLevel log_level) {
         s_learn_logger->set_level(static_cast<spdlog::level::level_enum>(log_level));
     }
-    static void set_hyper_level(LogLevel log_level)
-    {
+    static void set_hyper_level(LogLevel log_level) {
         s_hyper_logger->set_level(static_cast<spdlog::level::level_enum>(log_level));
     }
-    static void set_client_level(LogLevel log_level)
-    {
+    static void set_client_level(LogLevel log_level) {
         s_client_logger->set_level(static_cast<spdlog::level::level_enum>(log_level));
     }
 };
 
 #ifndef NDEBUG
 #define raise_critical(...)                                                                                \
-    do                                                                                                     \
-    {                                                                                                      \
+    do {                                                                                                   \
         ::NeuralNet::Log::get_error_logger()->critical(__VA_ARGS__);                                       \
         ::NeuralNet::Log::get_error_logger()->critical("(in {}:{}; in function: {})", __FILE__, __func__); \
         std::exit(EXIT_FAILURE);                                                                           \
-    } while (0)
+    } while(0)
 #else
 #define raise_critical(...)                                          \
-    do                                                               \
-    {                                                                \
+    do {                                                             \
         ::NeuralNet::Log::get_error_logger()->critical(__VA_ARGS__); \
         std::exit(EXIT_FAILURE);                                     \
-    } while (0)
+    } while(0)
 #endif
 
 #define log_learn_extra(...)   Log::get_learn_logger()->trace(__VA_ARGS__)
