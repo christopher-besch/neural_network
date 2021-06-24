@@ -38,7 +38,7 @@ bin-int/*
 Makefile
 .vscode/*
 build
-debug_build
+build_db/*
 
 .cache/*
 compile_commands.json
