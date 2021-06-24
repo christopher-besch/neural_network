@@ -25,3 +25,4 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/neural_net")
 
 # executables
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/digit_recognition")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/football")

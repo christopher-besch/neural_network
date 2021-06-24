@@ -42,4 +42,5 @@ debug_build
 
 .cache/*
 compile_commands.json
+data/football/*
 
