@@ -28,7 +28,7 @@ inline int32_t get_int32_t(std::ifstream& file) {
     return num;
 }
 
-NeuralNet::Data load_data(std::string images_path, std::string labels_path) {
+NeuralNet::Data load_data(const std::string& images_path, const std::string& labels_path) {
     try {
         ////////////
         // images //

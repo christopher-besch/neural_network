@@ -44,11 +44,11 @@ enum class LearningScheduleType : uint8_t { None = 0,
 // data in hyper-space
 struct HyperParameter {
     // required
-    size_t mini_batch_size = 0;
     // start learning rate
     float init_eta = 0.0f;
 
     // optional
+    size_t mini_batch_size = 50;
     // stop after these epchs regardless of any schedule
     size_t max_epochs = 200;
 

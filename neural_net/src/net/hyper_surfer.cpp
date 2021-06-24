@@ -16,8 +16,6 @@ void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
     size_t               max_epochs_buffer             = hy.max_epochs;
     LearningScheduleType learning_schedule_type_buffer = hy.learning_schedule_type;
     hy.learning_schedule_type                          = LearningScheduleType::None;
-    // initial parameters, good default values
-    hy.mini_batch_size = 50;
     log_hyper_general("Find order of magnitude of eta threshold...");
     coarse_eta_surf(net, hy);
     // use constant eta for further hyper surfing
@@ -40,8 +38,7 @@ void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
     log_hyper_general("\tmini_batch_size: {}", hy.mini_batch_size);
 }
 
-void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs,
-                         size_t max_tries) {
+void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs, size_t max_tries) {
     hy.reset_monitor();
     hy.max_epochs            = first_epochs;
     hy.monitor_eval_accuracy = true;

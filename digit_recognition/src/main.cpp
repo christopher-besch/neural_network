@@ -43,7 +43,7 @@ int main(int argc, const char* argv[]) {
     NeuralNet::Data cp_eval_data     = eval_data.get_sub(0, 1000);
 
 #if 1
-    // create nework
+    // create network
     NeuralNet::Network net;
     create_network(net, {784, 100, 10}, NeuralNet::Cost::get("cross_entropy"));
 
