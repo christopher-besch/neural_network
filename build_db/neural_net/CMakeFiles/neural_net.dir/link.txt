@@ -1,2 +1,0 @@
-/usr/bin/ar qc libneural_net.a  CMakeFiles/neural_net.dir/src/costs.cpp.o CMakeFiles/neural_net.dir/src/log.cpp.o CMakeFiles/neural_net.dir/src/net/hyper_surfer.cpp.o CMakeFiles/neural_net.dir/src/net/learn.cpp.o CMakeFiles/neural_net.dir/src/net/setup.cpp.o
-/usr/bin/ranlib libneural_net.a
