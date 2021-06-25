@@ -1,5 +1,5 @@
 #pragma once
-#include "sigmoid.h"
+#include "net/sigmoid.h"
 
 #include <memory>
 

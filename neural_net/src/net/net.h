@@ -1,6 +1,7 @@
 #pragma once
-#include "costs.h"
-#include "data.h"
+#include "hyper/data.h"
+#include "learn/evaluator.h"
+#include "net/costs.h"
 
 namespace NeuralNet {
 struct Network {
@@ -14,6 +15,8 @@ struct Network {
     // weights[i] are between i-th and i+1-th layer
     // w_(j,k) = weight from k-th in first layer to j-th in second layer
     std::vector<arma::fmat> weights;
+
+    std::function<float(const arma::fvec& y, const arma::fvec& a)> evaluator = DefaultEvaluater::classifier;
 
     // used for momentum-based gradient descent
     std::vector<arma::fmat> vel_biases;

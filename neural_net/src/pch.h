@@ -3,8 +3,8 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#include "log.h"
-#include "utils.h"
+#include "main/log.h"
+#include "main/utils.h"
 
 #include <cmath>
 #include <cstdint>

@@ -1,6 +1,6 @@
 #pragma once
-#include "learn.h"
-#include "net.h"
+#include "learn/learn.h"
+#include "net/net.h"
 
 namespace NeuralNet {
 ////////////

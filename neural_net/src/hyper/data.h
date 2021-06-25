@@ -1,5 +1,5 @@
 #pragma once
-#include "log.h"
+#include "main/log.h"
 
 #include <armadillo>
 #include <stddef.h>
@@ -17,7 +17,8 @@ public:
     Data(size_t n_cols, size_t x_size, size_t y_size)
         : m_data(x_size + y_size, n_cols, arma::fill::zeros), m_x_size(x_size), m_y_size(y_size) {}
 
-    Data(arma::fmat data, size_t x_size, size_t y_size): m_data(data), m_x_size(x_size), m_y_size(y_size) {}
+    Data(arma::fmat data, size_t x_size, size_t y_size)
+        : m_data(data), m_x_size(x_size), m_y_size(y_size) {}
 
     // input
     const arma::subview<float> get_x() const { return m_data.rows(0, m_x_size - 1); }

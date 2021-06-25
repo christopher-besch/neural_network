@@ -1,6 +1,6 @@
 #pragma once
-#include "costs.h"
-#include "net.h"
+#include "net/costs.h"
+#include "net/net.h"
 
 namespace NeuralNet {
 // sizes of layers, first is input, last is output

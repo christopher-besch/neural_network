@@ -1,6 +1,6 @@
 #include "hyper_surfer.h"
 
-#include "learn.h"
+#include "learn/learn.h"
 #include "pch.h"
 
 namespace NeuralNet {
