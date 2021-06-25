@@ -35,10 +35,10 @@ NeuralNet::Data load_data(const std::string& matches_path) {
             // home_goals
             std::getline(buffer_ss, buffer, ';');
             // anything bigger than 15 can't be expressed
-            uint8_t home_goals = std::min(std::stoi(buffer), 15);
+            int home_goals = std::min(std::stoi(buffer), 15);
             // guest_goals
             std::getline(buffer_ss, buffer, ';');
-            uint8_t guest_goals = std::min(std::stoi(buffer), 15);
+            int guest_goals = std::min(std::stoi(buffer), 15);
             // home_guess_rel
             std::getline(buffer_ss, buffer, ';');
             float home_guess_rel = std::stof(buffer);
@@ -76,6 +76,11 @@ NeuralNet::Data load_data(const std::string& matches_path) {
             data.get_y().at(5, i) = guest_goals & (1 << 1) >> 1;
             data.get_y().at(6, i) = guest_goals & (1 << 2) >> 2;
             data.get_y().at(7, i) = guest_goals & (1 << 3) >> 3;
+
+            std::cout << home_goals << std::endl;
+            std::cout << guest_goals << std::endl;
+            std::cout << data.get_y().col(0) << std::endl;
+            std::exit(EXIT_FAILURE);
         }
 
         file.close();
@@ -96,13 +101,25 @@ int main(int argc, char* argv[]) {
 
     NeuralNet::Data train_data = data.get_sub(0, 2234);
     // todo: fix
-    // NeuralNet::Data test_data = data.get_sub(2234, 500);
-    // NeuralNet::Data eval_data = data.get_sub(2734, 500);
-    NeuralNet::Data test_data = data.get_sub(2234, 1000);
-    NeuralNet::Data eval_data = data.get_sub(2234, 1000);
+    NeuralNet::Data test_data = data.get_sub(2234, 500);
+    NeuralNet::Data eval_data = data.get_sub(2734, 500);
 
     NeuralNet::Network net;
     create_network(net, {3, 20, 20, 8}, NeuralNet::Cost::get("cross_entropy"));
+
+    std::cout << train_data.get_x().col(0) << std::endl;
+    std::cout << train_data.get_y().col(0) << std::endl;
+    return 0;
+
+    net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
+        std::cout << y << std::endl;
+        std::cout << a << std::endl;
+        for(int i = 0; i < 8; ++i) {
+            if(std::round(y[i]) != a[i])
+                return false;
+        }
+        return true;
+    };
 
     NeuralNet::HyperParameter hy;
     hy.training_data         = &train_data;
@@ -115,12 +132,13 @@ int main(int argc, char* argv[]) {
     NeuralNet::coarse_eta_surf(net, hy);
     NeuralNet::mini_batch_size_surf(net, hy);
     log_client_general(hy.to_str());
+    return 0;
 
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
     hy.learning_schedule_type = NeuralNet::LearningScheduleType::EvalAccuracy;
-    hy.max_epochs             = 1000;
     hy.no_improvement_in      = 100;
-    hy.stop_eta_fraction      = 1024;
+    hy.max_epochs             = 10;
+    hy.stop_eta_fraction      = 128;
     hy.monitor_eval_cost      = true;
     hy.monitor_train_cost     = true;
     hy.monitor_train_accuracy = true;
