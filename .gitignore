@@ -42,5 +42,5 @@ build_db/*
 
 .cache/*
 compile_commands.json
-data/football/*
+data/kickprophet/*
 
