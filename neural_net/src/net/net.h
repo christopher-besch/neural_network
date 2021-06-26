@@ -18,27 +18,27 @@ struct Network {
 
     std::function<float(const arma::fvec& y, const arma::fvec& a)> evaluator = DefaultEvaluater::classifier;
 
-    // used for momentum-based gradient descent
-    std::vector<arma::fmat> vel_biases;
-    std::vector<arma::fmat> vel_weights;
-
     std::shared_ptr<Cost> cost;
-};
 
-inline std::ostream& operator<<(std::ostream& out, const Network& net) {
-    out << "<Network: sizes: ";
-    for(size_t size: net.sizes)
-        out << size << " ";
-    out << std::endl
-        << "biases:" << std::endl;
-    for(const arma::fvec& bias: net.biases)
-        out << bias.n_rows << " " << bias.n_cols << std::endl;
-    out << "weights:" << std::endl;
-    for(const arma::fmat& weight: net.weights)
-        out << weight.n_rows << " " << weight.n_cols << std::endl;
-    out << ">";
-    return out;
-}
+    // true -> last layer is post process layer <- this layer won't be changed by learning algorithm
+    bool post_process = false;
+
+    std::string to_str() const {
+        std::stringstream out;
+        out << "<Network: sizes: ";
+        for(size_t size: sizes)
+            out << size << " ";
+        out << std::endl
+            << "biases:" << std::endl;
+        for(const arma::fvec& bias: biases)
+            out << bias.n_rows << " " << bias.n_cols << std::endl;
+        out << "weights:" << std::endl;
+        for(const arma::fmat& weight: weights)
+            out << weight.n_rows << " " << weight.n_cols << std::endl;
+        out << ">";
+        return out.str();
+    }
+};
 
 enum class LearningScheduleType : uint8_t { None = 0,
                                             TestAccuracy,

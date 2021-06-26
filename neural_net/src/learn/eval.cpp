@@ -58,7 +58,7 @@ float total_cost(const Network& net, const Data* data, float lambda_l1, float la
 arma::fmat feedforward(const Network& net, arma::fmat a) {
     // loop over each layer
     for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1; ++left_layer_idx) {
-        //                               <- actually of right layer
+        //                                 <- actually of right layer
         arma::fmat biases_mat = net.biases[left_layer_idx] * arma::fmat(1, a.n_cols, arma::fill::ones);
         a                     = sigmoid(net.weights[left_layer_idx] * a + biases_mat);
     }

@@ -37,6 +37,9 @@ class CrossEntropyCost: public Cost {
         arma::fvec result = -y % arma::log(a) - (1 - y) % arma::log(1 - a);
         // take care of log of numbers close to 0
         result.replace(arma::datum::nan, 0.0f);
+        // and infinity gets replaced with the speed of light
+        // why? I needed a big number; that'll do
+        result.replace(arma::datum::inf, arma::datum::c_0);
         // sum of all rows
         return arma::sum(result);
     }

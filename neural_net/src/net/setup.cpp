@@ -3,17 +3,16 @@
 #include "pch.h"
 
 namespace NeuralNet {
-void create_network(Network& net, const std::vector<size_t>& sizes) {
+void create_network(Network& net, const std::vector<size_t>& sizes, bool post_process) {
     // todo: make multi threaded
     arma::arma_rng::set_seed_random();
 
-    net.num_layers = sizes.size();
-    net.sizes      = sizes;
+    net.post_process = post_process;
+    net.num_layers   = sizes.size();
+    net.sizes        = sizes;
 
     null_weight_init(net);
     default_weight_reset(net);
-    reset_vel(net);
-
     net.cost = Cost::get("cross_entropy");
 }
 
@@ -45,8 +44,6 @@ void load_json_network(Network& net, const std::string& json_path) {
         net.biases.push_back(b);
 
     net.cost = Cost::get(json_net["cost"]);
-
-    reset_vel(net);
 }
 
 void save_json(const Network& net, const std::string& path) {
@@ -94,31 +91,22 @@ void null_weight_init(Network& net) {
 }
 
 void default_weight_reset(Network& net) {
-    for(size_t layer_idx = 1; layer_idx < net.num_layers; ++layer_idx) {
+    for(size_t layer_idx = 1; layer_idx < net.num_layers - net.post_process; ++layer_idx) {
         net.biases[layer_idx - 1].randn();
     }
-    for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1; ++left_layer_idx) {
+    for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1 - net.post_process; ++left_layer_idx) {
         net.weights[left_layer_idx].randn();
         net.weights[left_layer_idx] /= sqrt(net.sizes[left_layer_idx + 1]);
     }
 }
 
 void large_weight_reset(Network& net) {
-    for(size_t layer_idx = 1; layer_idx < net.num_layers; ++layer_idx) {
+    for(size_t layer_idx = 1; layer_idx < net.num_layers - net.post_process; ++layer_idx) {
         net.biases[layer_idx - 1].randn();
     }
 
-    for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1; ++left_layer_idx) {
+    for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1 - net.post_process; ++left_layer_idx) {
         net.weights[left_layer_idx].randn();
-    }
-}
-
-void reset_vel(Network& net) {
-    net.vel_biases.resize(net.biases.size());
-    net.vel_weights.resize(net.weights.size());
-    for(size_t i = 0; i < net.vel_biases.size(); ++i) {
-        net.vel_biases[i]  = arma::fvec(net.biases[i].n_rows, arma::fill::zeros);
-        net.vel_weights[i] = arma::fmat(net.weights[i].n_rows, net.weights[i].n_cols, arma::fill::zeros);
     }
 }
 } // namespace NeuralNet

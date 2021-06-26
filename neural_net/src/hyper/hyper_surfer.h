@@ -12,7 +12,10 @@ void coarse_hyper_surf(const Network& net, HyperParameter& hy);
 
 // using eval accuracy to find best order of magnitude of supplied parameter
 // changing: monitors, max_epochs, h_parameter
-void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs = 10, size_t max_tries = 35, size_t amount = 10);
+void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs = 10, size_t max_tries = 35, size_t amount = 3);
+
+// wrapper of default_coarse_surf for lambda_l2
+void coarse_lambda_l2_surf(const Network& net, HyperParameter& hy, size_t first_epochs = 10, size_t max_tries = 35, size_t amount = 10);
 
 // find mini batch size with least amount of time required
 // scale init_eta anti-proportionally to mini_batch_size

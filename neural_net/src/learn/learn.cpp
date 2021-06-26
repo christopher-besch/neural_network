@@ -16,6 +16,15 @@ void sgd(Network& net, HyperParameter& hy) {
     float  stop_eta = hy.stop_eta_fraction ? hy.init_eta / hy.stop_eta_fraction : 0;
     size_t n        = hy.training_data->get_x().n_cols;
 
+    // used for momentum-based gradient descent
+    std::vector<arma::fmat> vel_biases(net.biases.size());
+    std::vector<arma::fmat> vel_weights(net.weights.size());
+    // set to all 0
+    for(size_t i = 0; i < vel_biases.size(); ++i) {
+        vel_biases[i]  = arma::fvec(net.biases[i].n_rows, arma::fill::zeros);
+        vel_weights[i] = arma::fmat(net.weights[i].n_rows, net.weights[i].n_cols, arma::fill::zeros);
+    }
+
     size_t epoch = 0;
     // gets reset after reducing eta
     size_t epochs_since_last_reduction = 0;
@@ -28,8 +37,16 @@ void sgd(Network& net, HyperParameter& hy) {
         for(size_t offset = 0; offset < n; offset += hy.mini_batch_size) {
             // make last batch smaller if necessary
             size_t length = offset + hy.mini_batch_size >= n ? n - offset : hy.mini_batch_size;
-            update_mini_batch(net, this_training_data.get_mini_x(offset, length),
-                              this_training_data.get_mini_y(offset, length), eta, hy.mu, hy.lambda_l1, hy.lambda_l2, n);
+            update_mini_batch(net,
+                              this_training_data.get_mini_x(offset, length),
+                              this_training_data.get_mini_y(offset, length),
+                              vel_biases,
+                              vel_weights,
+                              eta,
+                              hy.mu,
+                              hy.lambda_l1,
+                              hy.lambda_l2,
+                              n);
         }
         log_learn_extra("Epoch {} training complete", epoch);
         update_learn_status(net, hy);
@@ -88,8 +105,16 @@ void sgd(Network& net, HyperParameter& hy) {
         log_learn_extra("learning time: {} nanoseconds", std::to_string(delta_time));
 }
 
-void update_mini_batch(Network& net, const arma::subview<float> x, const arma::subview<float> y, float eta, float mu,
-                       float lambda_l1, float lambda_l2, size_t n) {
+void update_mini_batch(Network&                   net,
+                       const arma::subview<float> x,
+                       const arma::subview<float> y,
+                       std::vector<arma::fmat>&   vel_biases,
+                       std::vector<arma::fmat>&   vel_weights,
+                       float                      eta,
+                       float                      mu,
+                       float                      lambda_l1,
+                       float                      lambda_l2,
+                       size_t                     n) {
     // sums of gradients <- how do certain weights and biases change the cost
     // layer-wise
     std::vector<arma::fvec> nabla_b(net.biases.size());
@@ -116,30 +141,34 @@ void update_mini_batch(Network& net, const arma::subview<float> x, const arma::s
     float lambda_l1_over_n = lambda_l1 / n;
     float lambda_l2_over_n = lambda_l2 / n;
     // update weights and biases
+    // ignore post process layer
     // move in opposite direction -> reduce cost
-    for(size_t i = 0; i < net.weights.size(); ++i) {
+    for(size_t i = 0; i < net.weights.size() - net.post_process; ++i) {
         // include weight decay
         // L1 regularization
-        net.vel_weights[i] -= eta * lambda_l1_over_n * arma::sign(net.weights[i]);
+        vel_weights[i] -= eta * lambda_l1_over_n * arma::sign(net.weights[i]);
         // L2 regularization
-        net.vel_weights[i] *= 1.0f - eta * lambda_l2_over_n;
+        vel_weights[i] *= 1.0f - eta * lambda_l2_over_n;
 
         // update velocity
         // apply momentum co-efficient
-        net.vel_weights[i] *= mu;
-        net.vel_biases[i] *= mu;
+        vel_weights[i] *= mu;
+        vel_biases[i] *= mu;
         // approx gradient with mini batch
-        net.vel_weights[i] -= eta_over_length * nabla_w[i];
-        net.vel_biases[i] -= eta_over_length * nabla_b[i];
+        vel_weights[i] -= eta_over_length * nabla_w[i];
+        vel_biases[i] -= eta_over_length * nabla_b[i];
 
         // apply velocity
-        net.weights[i] += net.vel_weights[i];
-        net.biases[i] += net.vel_biases[i];
+        net.weights[i] += vel_weights[i];
+        net.biases[i] += vel_biases[i];
     }
 }
 
-void backprop(const Network& net, const arma::subview<float> x, const arma::subview<float> y,
-              std::vector<arma::fvec>& nabla_b, std::vector<arma::fmat>& nabla_w) {
+void backprop(const Network&             net,
+              const arma::subview<float> x,
+              const arma::subview<float> y,
+              std::vector<arma::fvec>&   nabla_b,
+              std::vector<arma::fmat>&   nabla_w) {
     // activations layer by layer <- needed by backprop algorithm
     // one per layer
     std::vector<arma::fmat> activations {x};

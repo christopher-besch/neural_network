@@ -97,16 +97,44 @@ int main(int argc, char* argv[]) {
     NeuralNet::Data data = load_data(root_data_path.str() + std::string("bundesliga.csv"));
 
     NeuralNet::Data train_data = data.get_sub(0, 3034);
-    // todo: fix
-    NeuralNet::Data test_data = data.get_sub(3034, 100);
-    NeuralNet::Data eval_data = data.get_sub(3134, 100);
+    NeuralNet::Data test_data  = data.get_sub(3034, 100);
+    NeuralNet::Data eval_data  = data.get_sub(3134, 100);
 
     NeuralNet::Network net;
+    // create_network(net, {3, 100, 100, 12, 12}, true);
     create_network(net, {3, 100, 100, 12});
     net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
         // both home and guest have to be correct
-        return NeuralNet::DefaultEvaluater::classifier(y.rows(0, 5), a.rows(0, 5)) && NeuralNet::DefaultEvaluater::classifier(y.rows(6, 11), a.rows(6, 11));
+        return NeuralNet::DefaultEvaluater::classifier(y.rows(0, 5), a.rows(0, 5)) &&
+               NeuralNet::DefaultEvaluater::classifier(y.rows(6, 11), a.rows(6, 11));
     };
+    // direct pass-through
+    // net.weights[net.weights.size() - 1](0, 0)   = 1.0f;
+    // net.weights[net.weights.size() - 1](1, 1)   = 1.0f;
+    // net.weights[net.weights.size() - 1](2, 2)   = 1.0f;
+    // net.weights[net.weights.size() - 1](3, 3)   = 1.0f;
+    // net.weights[net.weights.size() - 1](4, 4)   = 1.0f;
+    // net.weights[net.weights.size() - 1](5, 5)   = 1.0f;
+    // net.weights[net.weights.size() - 1](6, 6)   = 1.0f;
+    // net.weights[net.weights.size() - 1](7, 7)   = 1.0f;
+    // net.weights[net.weights.size() - 1](8, 8)   = 1.0f;
+    // net.weights[net.weights.size() - 1](9, 9)   = 1.0f;
+    // net.weights[net.weights.size() - 1](10, 10) = 1.0f;
+    // net.weights[net.weights.size() - 1](11, 11) = 1.0f;
+    // shift -> smaller than 0.5 is negative <- compensate effect of sigmoid function
+    // net.biases[net.biases.size() - 1](0)  = 0.5f;
+    // net.biases[net.biases.size() - 1](1)  = 0.5f;
+    // net.biases[net.biases.size() - 1](2)  = 0.5f;
+    // net.biases[net.biases.size() - 1](3)  = 0.5f;
+    // net.biases[net.biases.size() - 1](4)  = 0.5f;
+    // net.biases[net.biases.size() - 1](5)  = 0.5f;
+    // net.biases[net.biases.size() - 1](6)  = 0.5f;
+    // net.biases[net.biases.size() - 1](6)  = 0.5f;
+    // net.biases[net.biases.size() - 1](7)  = 0.5f;
+    // net.biases[net.biases.size() - 1](8)  = 0.5f;
+    // net.biases[net.biases.size() - 1](9)  = 0.5f;
+    // net.biases[net.biases.size() - 1](10) = 0.5f;
+    // net.biases[net.biases.size() - 1](11) = 0.5f;
 
     NeuralNet::HyperParameter hy;
     hy.training_data = &train_data;
@@ -116,8 +144,7 @@ int main(int argc, char* argv[]) {
     // coarse
     NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::Extra);
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Warn);
-    NeuralNet::coarse_hyper_surf(net, hy);
-    log_client_general("Coarse Hyper Surf done:\n{}", hy.to_str());
+    // NeuralNet::coarse_hyper_surf(net, hy);
 
     // fine
     NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::Extra);
@@ -128,8 +155,7 @@ int main(int argc, char* argv[]) {
     hy.stop_eta_fraction      = 128;
     hy.reset_monitor();
     hy.monitor_test_accuracy = true;
-    NeuralNet::bounce_hyper_surf(net, hy, 3, 5);
-    log_client_general("Fine Hyper Surf done:\n{}", hy.to_str());
+    // NeuralNet::bounce_hyper_surf(net, hy, 3, 5);
 
     // learn
     hy.max_epochs             = 300;
@@ -140,6 +166,7 @@ int main(int argc, char* argv[]) {
     hy.monitor_test_cost      = true;
     hy.monitor_eval_cost      = true;
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
+
     NeuralNet::sgd(net, hy);
 
     arma::fmat at = {0.9f, 0.05f, 0.05f};

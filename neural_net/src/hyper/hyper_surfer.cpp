@@ -50,13 +50,12 @@ void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
     // using no learning rate schedule
     size_t               max_epochs_buffer             = hy.max_epochs;
     LearningScheduleType learning_schedule_type_buffer = hy.learning_schedule_type;
-    hy.learning_schedule_type                          = LearningScheduleType::None;
+
     log_hyper_general("Find order of magnitude of eta threshold...");
     coarse_eta_surf(net, hy);
 
     log_hyper_general("Coarse lambda surf...");
-    hy.lambda_l2 = 1.0f;
-    default_coarse_surf(net, hy, hy.lambda_l2);
+    coarse_lambda_l2_surf(net, hy);
 
     log_hyper_general("Surf mini batch size...");
     mini_batch_size_surf(net, hy);
@@ -73,8 +72,9 @@ void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
 
 void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs, size_t max_tries, size_t amount) {
     hy.reset_monitor();
-    hy.max_epochs            = first_epochs;
-    hy.monitor_eval_accuracy = true;
+    hy.max_epochs             = first_epochs;
+    hy.learning_schedule_type = LearningScheduleType::None;
+    hy.monitor_eval_accuracy  = true;
 
     // determine direction of improvement
     h_parameter /= 10.0f;
@@ -107,10 +107,16 @@ void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parame
     raise_critical("Failed to find order of magnitude for parameter.");
 }
 
+void coarse_lambda_l2_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t max_tries, size_t amount) {
+    hy.lambda_l2 = 1.0f;
+    default_coarse_surf(net, hy, hy.lambda_l2, first_epochs, max_tries, amount);
+}
+
 void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t depth, size_t amount) {
     hy.reset_monitor();
-    hy.monitor_eval_accuracy = true;
-    hy.max_epochs            = first_epochs;
+    hy.monitor_eval_accuracy  = true;
+    hy.learning_schedule_type = LearningScheduleType::None;
+    hy.max_epochs             = first_epochs;
 
     // can't be any smaller than online learning or bigger than training data
     size_t min = 1;
@@ -155,9 +161,10 @@ void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_e
 
 void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta, size_t first_epochs, size_t max_tries, size_t amount) {
     hy.reset_monitor();
-    hy.init_eta           = start_eta;
-    hy.max_epochs         = first_epochs;
-    hy.monitor_train_cost = true;
+    hy.init_eta               = start_eta;
+    hy.learning_schedule_type = LearningScheduleType::None;
+    hy.max_epochs             = first_epochs;
+    hy.monitor_train_cost     = true;
 
     bool last_decreased = false;
     bool first          = true;
