@@ -1,6 +1,7 @@
 #include "hyper_surfer.h"
 
 #include "learn/learn.h"
+#include "net/setup.h"
 #include "pch.h"
 
 namespace NeuralNet {
@@ -8,6 +9,40 @@ inline void test(const Network& net, HyperParameter& hy) {
     Network current_net = net;
     hy.reset_results();
     sgd(current_net, hy);
+}
+
+// use multiple different sets of weights and take average
+inline float test_eval_accuracies(Network net, HyperParameter& hy, size_t amount) {
+    float delta_sum = 0;
+    for(size_t i = 0; i < amount; ++i) {
+        default_weight_reset(net);
+        test(net, hy);
+        delta_sum += get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
+    }
+    return delta_sum;
+}
+
+// use multiple different sets of weights and take average
+inline float test_eval_accuracies_over_time(Network net, HyperParameter& hy, size_t amount) {
+    float delta_over_time_sum = 0;
+    for(size_t i = 0; i < amount; ++i) {
+        default_weight_reset(net);
+        test(net, hy);
+        delta_over_time_sum += get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end()) / hy.learn_time;
+    }
+    return delta_over_time_sum;
+}
+
+// use multiple different sets of weights
+// true when majority is decreasing
+inline bool test_train_costs_decrease(Network net, HyperParameter& hy, size_t amount) {
+    float decreases = 0;
+    for(size_t i = 0; i < amount; ++i) {
+        default_weight_reset(net);
+        test(net, hy);
+        decreases += strictly_monotone_decrease(hy.train_costs);
+    }
+    return decreases / amount;
 }
 
 void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
@@ -18,8 +53,6 @@ void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
     hy.learning_schedule_type                          = LearningScheduleType::None;
     log_hyper_general("Find order of magnitude of eta threshold...");
     coarse_eta_surf(net, hy);
-    // use constant eta for further hyper surfing
-    hy.init_eta /= 2.0f;
 
     log_hyper_general("Coarse lambda surf...");
     hy.lambda_l2 = 1.0f;
@@ -28,28 +61,26 @@ void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
     log_hyper_general("Surf mini batch size...");
     mini_batch_size_surf(net, hy);
 
-    // use default options again
-    hy.init_eta *= 2.0f;
     hy.max_epochs             = max_epochs_buffer;
     hy.learning_schedule_type = learning_schedule_type_buffer;
+
+    // report
     log_hyper_general("Coarse Hyper surf complete:");
     log_hyper_general("\tinit_eta: {}", hy.init_eta);
     log_hyper_general("\tlambda_l2: {}", hy.lambda_l2);
     log_hyper_general("\tmini_batch_size: {}", hy.mini_batch_size);
 }
 
-void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs, size_t max_tries) {
+void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parameter, size_t first_epochs, size_t max_tries, size_t amount) {
     hy.reset_monitor();
     hy.max_epochs            = first_epochs;
     hy.monitor_eval_accuracy = true;
 
     // determine direction of improvement
     h_parameter /= 10.0f;
-    test(net, hy);
-    float left_delta = get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
+    float left_delta = test_eval_accuracies(net, hy, amount);
     h_parameter *= 100.0f;
-    test(net, hy);
-    float right_delta = get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
+    float right_delta = test_eval_accuracies(net, hy, amount);
 
     // set first delta
     float last_delta = left_delta > right_delta ? left_delta : right_delta;
@@ -65,8 +96,7 @@ void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parame
         // does step in right direction still improve?
         h_parameter *= go_right ? 10.0f : 1.0f / 10.0f;
         log_hyper_extra("Changing parameter to {}", h_parameter);
-        test(net, hy);
-        float new_delta = get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
+        float new_delta = test_eval_accuracies(net, hy, amount);
         if(new_delta < last_delta) {
             // go one step back
             h_parameter *= go_right ? 1.0f / 10.0f : 10.0f;
@@ -77,7 +107,7 @@ void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parame
     raise_critical("Failed to find order of magnitude for parameter.");
 }
 
-void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t depth) {
+void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_epochs, size_t depth, size_t amount) {
     hy.reset_monitor();
     hy.monitor_eval_accuracy = true;
     hy.max_epochs            = first_epochs;
@@ -94,20 +124,16 @@ void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_e
 
         // evaluate left value
         hy.init_eta *= static_cast<float>(hy.mini_batch_size) / static_cast<float>(left_value);
-        hy.mini_batch_size = left_value;
-        test(net, hy);
-        long long left_time  = hy.learn_time;
-        float     left_delta = get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
+        hy.mini_batch_size         = left_value;
+        float left_delta_over_time = test_eval_accuracies_over_time(net, hy, amount);
 
         // evaluate right value
         hy.init_eta *= static_cast<float>(hy.mini_batch_size) / static_cast<float>(right_value);
-        hy.mini_batch_size = right_value;
-        test(net, hy);
-        long long right_time  = hy.learn_time;
-        float     right_delta = get_sum_delta(hy.eval_accuracies.begin(), hy.eval_accuracies.end());
+        hy.mini_batch_size          = right_value;
+        float right_delta_over_time = test_eval_accuracies_over_time(net, hy, amount);
 
         // find best improvement per time
-        if((left_delta / left_time) > (right_delta / right_time)) {
+        if(left_delta_over_time > right_delta_over_time) {
             // leave min
             max = middle;
             log_hyper_extra("smaller side [{}; {}] is better for mini batch size", min, max);
@@ -127,7 +153,7 @@ void mini_batch_size_surf(const Network& net, HyperParameter& hy, size_t first_e
     log_hyper_extra("found best mini batch size: {}; set eta threshold to {}", hy.mini_batch_size, hy.init_eta);
 }
 
-void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta, size_t first_epochs, size_t max_tries) {
+void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta, size_t first_epochs, size_t max_tries, size_t amount) {
     hy.reset_monitor();
     hy.init_eta           = start_eta;
     hy.max_epochs         = first_epochs;
@@ -136,13 +162,14 @@ void coarse_eta_surf(const Network& net, HyperParameter& hy, float start_eta, si
     bool last_decreased = false;
     bool first          = true;
     for(size_t i = 0; i < max_tries; ++i) {
-        test(net, hy);
+        // strictly monotone decreasing in most cases
+        bool decrease = test_train_costs_decrease(net, hy, amount);
         if(first) {
-            last_decreased = strictly_monotone_decrease(hy.train_costs);
+            last_decreased = decrease;
             first          = false;
         }
 
-        if(strictly_monotone_decrease(hy.train_costs)) {
+        if(decrease) {
             if(last_decreased) {
                 hy.init_eta *= 10;
                 log_hyper_extra("Still decreasing, raising eta to {}", hy.init_eta);
@@ -170,16 +197,20 @@ void bounce_hyper_surf(const Network& net, HyperParameter& hy, size_t fine_surfs
     log_hyper_general("Bounce Hyper Surf...");
     hy.mu = 0.5f;
     for(size_t i = 0; i < fine_surfs; ++i) {
+        // use new weights each time
+        Network this_net = net;
+        default_weight_reset(this_net);
+
         log_hyper_general("{}. fine mu adjustment...", i);
-        default_fine_surf(net, hy, hy.mu, 0.0f, 1.0f, surf_depth);
+        default_fine_surf(this_net, hy, hy.mu, 0.0f, 1.0f, surf_depth);
         log_hyper_general("mu set to: {}", hy.mu);
 
         log_hyper_general("{}. fine init_eta adjustment...", i);
-        default_fine_surf(net, hy, hy.init_eta, hy.init_eta / 1.5f, hy.init_eta * 1.5f, surf_depth);
+        default_fine_surf(this_net, hy, hy.init_eta, hy.init_eta / 2.0f, hy.init_eta * 2.0f, surf_depth);
         log_hyper_general("init_eta set to: {}", hy.init_eta);
 
         log_hyper_general("{}. fine lambda adjustment...", i);
-        default_fine_surf(net, hy, hy.lambda_l2, hy.lambda_l2 / 1.5f, hy.lambda_l2 * 1.5f, surf_depth);
+        default_fine_surf(this_net, hy, hy.lambda_l2, hy.lambda_l2 / 2.0f, hy.lambda_l2 * 2.0f, surf_depth);
         log_hyper_general("lambda_l2 set to: {}", hy.lambda_l2);
     }
     log_hyper_general("Bounce Hyper surf complete:");

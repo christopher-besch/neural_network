@@ -29,16 +29,16 @@ NeuralNet::Data load_data(const std::string& matches_path) {
 
         // skip header
         std::getline(file, buffer);
-        NeuralNet::Data data(lines, 3, 8);
+        NeuralNet::Data data(lines, 3, 12);
         for(size_t i = 0; std::getline(file, buffer); ++i) {
             std::stringstream buffer_ss(buffer);
             // home_goals
             std::getline(buffer_ss, buffer, ';');
-            // anything bigger than 15 can't be expressed
-            int home_goals = std::min(std::stoi(buffer), 15);
+            // anything bigger than 5 can't be expressed
+            int home_goals = std::min(std::stoi(buffer), 5);
             // guest_goals
             std::getline(buffer_ss, buffer, ';');
-            int guest_goals = std::min(std::stoi(buffer), 15);
+            int guest_goals = std::min(std::stoi(buffer), 5);
             // home_guess_rel
             std::getline(buffer_ss, buffer, ';');
             float home_guess_rel = std::stof(buffer);
@@ -67,20 +67,17 @@ NeuralNet::Data load_data(const std::string& matches_path) {
             data.get_x().at(2, i) = guest_guess_rel;
 
             // output
-            data.get_y().at(0, i) = home_goals & (1 << 0) >> 0;
-            data.get_y().at(1, i) = home_goals & (1 << 1) >> 1;
-            data.get_y().at(2, i) = home_goals & (1 << 2) >> 2;
-            data.get_y().at(3, i) = home_goals & (1 << 3) >> 3;
-
-            data.get_y().at(4, i) = guest_goals & (1 << 0) >> 0;
-            data.get_y().at(5, i) = guest_goals & (1 << 1) >> 1;
-            data.get_y().at(6, i) = guest_goals & (1 << 2) >> 2;
-            data.get_y().at(7, i) = guest_goals & (1 << 3) >> 3;
-
-            std::cout << home_goals << std::endl;
-            std::cout << guest_goals << std::endl;
-            std::cout << data.get_y().col(0) << std::endl;
-            std::exit(EXIT_FAILURE);
+            //             data.get_y().at(0, i) = (home_goals >> 0) & 1;
+            //             data.get_y().at(1, i) = (home_goals >> 1) & 1;
+            //             data.get_y().at(2, i) = (home_goals >> 2) & 1;
+            //             data.get_y().at(3, i) = (home_goals >> 3) & 1;
+            //
+            //             data.get_y().at(4, i) = (guest_goals >> 0) & 1;
+            //             data.get_y().at(5, i) = (guest_goals >> 1) & 1;
+            //             data.get_y().at(6, i) = (guest_goals >> 2) & 1;
+            //             data.get_y().at(7, i) = (guest_goals >> 3) & 1;
+            data.get_y().at(home_goals, i)      = true;
+            data.get_y().at(guest_goals + 6, i) = true;
         }
 
         file.close();
@@ -99,60 +96,53 @@ int main(int argc, char* argv[]) {
     root_data_path << argv[1] << file_slash << "kickprophet" << file_slash;
     NeuralNet::Data data = load_data(root_data_path.str() + std::string("bundesliga.csv"));
 
-    NeuralNet::Data train_data = data.get_sub(0, 2234);
+    NeuralNet::Data train_data = data.get_sub(0, 3034);
     // todo: fix
-    NeuralNet::Data test_data = data.get_sub(2234, 500);
-    NeuralNet::Data eval_data = data.get_sub(2734, 500);
+    NeuralNet::Data test_data = data.get_sub(3034, 100);
+    NeuralNet::Data eval_data = data.get_sub(3134, 100);
 
     NeuralNet::Network net;
-    create_network(net, {3, 20, 20, 8}, NeuralNet::Cost::get("cross_entropy"));
-
-    std::cout << train_data.get_x().col(0) << std::endl;
-    std::cout << train_data.get_y().col(0) << std::endl;
-    return 0;
-
+    create_network(net, {3, 100, 100, 12});
     net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
-        std::cout << y << std::endl;
-        std::cout << a << std::endl;
-        for(int i = 0; i < 8; ++i) {
-            if(std::round(y[i]) != a[i])
-                return false;
-        }
-        return true;
+        // both home and guest have to be correct
+        return NeuralNet::DefaultEvaluater::classifier(y.rows(0, 5), a.rows(0, 5)) && NeuralNet::DefaultEvaluater::classifier(y.rows(6, 11), a.rows(6, 11));
     };
 
     NeuralNet::HyperParameter hy;
-    hy.training_data         = &train_data;
-    hy.test_data             = &test_data;
-    hy.eval_data             = &eval_data;
-    hy.monitor_eval_accuracy = true;
+    hy.training_data = &train_data;
+    hy.test_data     = &test_data;
+    hy.eval_data     = &eval_data;
+
+    // coarse
     NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::Extra);
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Warn);
-    // NeuralNet::coarse_hyper_surf(net, hy);
-    NeuralNet::coarse_eta_surf(net, hy);
-    NeuralNet::mini_batch_size_surf(net, hy);
-    log_client_general(hy.to_str());
-    return 0;
+    NeuralNet::coarse_hyper_surf(net, hy);
+    log_client_general("Coarse Hyper Surf done:\n{}", hy.to_str());
 
-    NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
-    hy.learning_schedule_type = NeuralNet::LearningScheduleType::EvalAccuracy;
-    hy.no_improvement_in      = 100;
-    hy.max_epochs             = 10;
-    hy.stop_eta_fraction      = 128;
-    hy.monitor_eval_cost      = true;
-    hy.monitor_train_cost     = true;
-    hy.monitor_train_accuracy = true;
-    NeuralNet::sgd(net, hy);
-    arma::fmat at = {0.9f, 0.05f, 0.05f};
-    arma::fmat a  = at.t();
-    std::cout << NeuralNet::feedforward(net, a) << std::endl;
-    return 0;
-
-    hy.learning_schedule_type = NeuralNet::LearningScheduleType::EvalAccuracy;
-    hy.max_epochs             = 500;
+    // fine
+    NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::Extra);
+    NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Warn);
+    hy.max_epochs             = 100;
+    hy.learning_schedule_type = NeuralNet::LearningScheduleType::TestAccuracy;
     hy.no_improvement_in      = 10;
     hy.stop_eta_fraction      = 128;
+    hy.reset_monitor();
+    hy.monitor_test_accuracy = true;
+    NeuralNet::bounce_hyper_surf(net, hy, 3, 5);
+    log_client_general("Fine Hyper Surf done:\n{}", hy.to_str());
+
+    // learn
+    hy.max_epochs             = 300;
+    hy.monitor_test_accuracy  = true;
+    hy.monitor_train_accuracy = true;
+    hy.monitor_eval_accuracy  = true;
+    hy.monitor_train_cost     = true;
+    hy.monitor_test_cost      = true;
+    hy.monitor_eval_cost      = true;
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
-    NeuralNet::bounce_hyper_surf(net, hy, 2, 3);
     NeuralNet::sgd(net, hy);
+
+    arma::fmat at = {0.9f, 0.05f, 0.05f};
+    arma::fmat a  = at.t();
+    std::cout << feedforward(net, a);
 }

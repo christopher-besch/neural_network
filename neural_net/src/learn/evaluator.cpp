@@ -28,5 +28,13 @@ float classifier(const arma::fvec& y, const arma::fvec& a) {
     }
     return selected_number == correct_number;
 }
+
+float all_round_correct(const arma::fvec& y, const arma::fvec& a) {
+    for(int i = 0; i < 8; ++i) {
+        if(std::round(a[i]) != y[i])
+            return false;
+    }
+    return true;
+}
 } // namespace DefaultEvaluater
 } // namespace NeuralNet

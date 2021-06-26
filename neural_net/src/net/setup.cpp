@@ -3,17 +3,18 @@
 #include "pch.h"
 
 namespace NeuralNet {
-void create_network(Network& net, const std::vector<size_t>& sizes, std::shared_ptr<Cost> cost) {
+void create_network(Network& net, const std::vector<size_t>& sizes) {
     // todo: make multi threaded
     arma::arma_rng::set_seed_random();
 
     net.num_layers = sizes.size();
     net.sizes      = sizes;
 
-    default_weight_init(net);
+    null_weight_init(net);
+    default_weight_reset(net);
     reset_vel(net);
 
-    net.cost = cost;
+    net.cost = Cost::get("cross_entropy");
 }
 
 void load_json_network(Network& net, const std::string& json_path) {
@@ -74,12 +75,12 @@ void save_json(const Network& net, const std::string& path) {
     file.close();
 }
 
-void default_weight_init(Network& net) {
+void null_weight_init(Network& net) {
     net.biases.resize(0);
     // one for each layer except input layer
     net.biases.reserve(net.num_layers - 1);
     for(size_t layer_idx = 1; layer_idx < net.num_layers; ++layer_idx) {
-        net.biases.emplace_back(net.sizes[layer_idx], 1, arma::fill::randn);
+        net.biases.emplace_back(net.sizes[layer_idx], 1, arma::fill::zeros);
     }
 
     net.weights.resize(0);
@@ -88,34 +89,33 @@ void default_weight_init(Network& net) {
     net.weights.reserve(net.num_layers - 1);
     for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1; ++left_layer_idx) {
         // from next layer to current layer
-        net.weights.emplace_back(net.sizes[left_layer_idx + 1], net.sizes[left_layer_idx], arma::fill::randn);
+        net.weights.emplace_back(net.sizes[left_layer_idx + 1], net.sizes[left_layer_idx], arma::fill::zeros);
+    }
+}
+
+void default_weight_reset(Network& net) {
+    for(size_t layer_idx = 1; layer_idx < net.num_layers; ++layer_idx) {
+        net.biases[layer_idx - 1].randn();
+    }
+    for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1; ++left_layer_idx) {
+        net.weights[left_layer_idx].randn();
         net.weights[left_layer_idx] /= sqrt(net.sizes[left_layer_idx + 1]);
     }
 }
 
-void large_weight_init(Network& net) {
-    net.biases.resize(0);
-    // one for each layer except input layer
-    net.biases.reserve(net.num_layers - 1);
+void large_weight_reset(Network& net) {
     for(size_t layer_idx = 1; layer_idx < net.num_layers; ++layer_idx) {
-        net.biases.emplace_back(net.sizes[layer_idx], 1, arma::fill::randn);
+        net.biases[layer_idx - 1].randn();
     }
 
-    net.weights.resize(0);
-    // one for each layer except input layer
-    // one for each space between layers
-    net.weights.reserve(net.num_layers - 1);
     for(size_t left_layer_idx = 0; left_layer_idx < net.num_layers - 1; ++left_layer_idx) {
-        // from next layer to current layer
-        net.weights.emplace_back(net.sizes[left_layer_idx + 1], net.sizes[left_layer_idx], arma::fill::randn);
+        net.weights[left_layer_idx].randn();
     }
 }
 
 void reset_vel(Network& net) {
     net.vel_biases.resize(net.biases.size());
     net.vel_weights.resize(net.weights.size());
-    // set to size of weights and biases
-    // start at all 0
     for(size_t i = 0; i < net.vel_biases.size(); ++i) {
         net.vel_biases[i]  = arma::fvec(net.biases[i].n_rows, arma::fill::zeros);
         net.vel_weights[i] = arma::fmat(net.weights[i].n_rows, net.weights[i].n_cols, arma::fill::zeros);

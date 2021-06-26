@@ -45,7 +45,7 @@ int main(int argc, const char* argv[]) {
 #if 1
     // create network
     NeuralNet::Network net;
-    create_network(net, {784, 100, 10}, NeuralNet::Cost::get("cross_entropy"));
+    create_network(net, {784, 100, 10});
 
     // set some hyper parameters
     NeuralNet::HyperParameter hy;
