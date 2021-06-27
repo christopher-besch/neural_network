@@ -94,20 +94,56 @@ int main(int argc, char* argv[]) {
         raise_critical("Please specify the path to the data as the first parameter.");
     std::stringstream root_data_path;
     root_data_path << argv[1] << file_slash << "kickprophet" << file_slash;
-    NeuralNet::Data data = load_data(root_data_path.str() + std::string("bundesliga.csv"));
-
-    NeuralNet::Data train_data = data.get_sub(0, 3034);
-    NeuralNet::Data test_data  = data.get_sub(3034, 100);
-    NeuralNet::Data eval_data  = data.get_sub(3134, 100);
+    NeuralNet::Data train_data = load_data(root_data_path.str() + std::string("train_data.csv"));
+    NeuralNet::Data test_data  = load_data(root_data_path.str() + std::string("test_data.csv"));
 
     NeuralNet::Network net;
     // create_network(net, {3, 100, 100, 12, 12}, true);
     create_network(net, {3, 100, 100, 12});
+
+    // accuracy only
+    // net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
+    //     // both home and guest goals have to be correct
+    //     return NeuralNet::DefaultEvaluater::classifier(y.rows(0, 5), a.rows(0, 5)) &&
+    //            NeuralNet::DefaultEvaluater::classifier(y.rows(6, 11), a.rows(6, 11));
+    // };
+
+    // correct rules
     net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
-        // both home and guest have to be correct
-        return NeuralNet::DefaultEvaluater::classifier(y.rows(0, 5), a.rows(0, 5)) &&
-               NeuralNet::DefaultEvaluater::classifier(y.rows(6, 11), a.rows(6, 11));
+        size_t correct_home;
+        size_t selected_home;
+        NeuralNet::get_highest_index(y.rows(0, 5), a.rows(0, 5), correct_home, selected_home);
+        size_t correct_guest;
+        size_t selected_guest;
+        NeuralNet::get_highest_index(y.rows(6, 11), a.rows(6, 11), correct_guest, selected_guest);
+
+        float score = 0.0f;
+        // everything correct
+        if((correct_home == selected_home) && (correct_guest == selected_guest))
+            score = 4.0f;
+        // correct draw
+        else if((correct_guest == correct_home) && (selected_guest == selected_home))
+            score = 2.0f;
+        // difference correct
+        else if((selected_home - selected_guest) == (correct_home - correct_guest))
+            score = 3.0f;
+        // tendency correct
+        else if((selected_home > selected_guest) == (correct_home > correct_guest))
+            score = 2.0f;
+
+        // todo: test
+        // std::cout << "--------------------------------------------------" << std::endl;
+        // std::cout << correct_home << std::endl;
+        // std::cout << correct_guest << std::endl;
+        // std::cout << std::endl;
+        // std::cout << selected_home << std::endl;
+        // std::cout << selected_guest << std::endl;
+        // std::cout << std::endl;
+        // std::cout << score << std::endl;
+
+        return score;
     };
+
     // direct pass-through
     // net.weights[net.weights.size() - 1](0, 0)   = 1.0f;
     // net.weights[net.weights.size() - 1](1, 1)   = 1.0f;
@@ -122,54 +158,67 @@ int main(int argc, char* argv[]) {
     // net.weights[net.weights.size() - 1](10, 10) = 1.0f;
     // net.weights[net.weights.size() - 1](11, 11) = 1.0f;
     // shift -> smaller than 0.5 is negative <- compensate effect of sigmoid function
-    // net.biases[net.biases.size() - 1](0)  = 0.5f;
-    // net.biases[net.biases.size() - 1](1)  = 0.5f;
-    // net.biases[net.biases.size() - 1](2)  = 0.5f;
-    // net.biases[net.biases.size() - 1](3)  = 0.5f;
-    // net.biases[net.biases.size() - 1](4)  = 0.5f;
-    // net.biases[net.biases.size() - 1](5)  = 0.5f;
-    // net.biases[net.biases.size() - 1](6)  = 0.5f;
-    // net.biases[net.biases.size() - 1](6)  = 0.5f;
-    // net.biases[net.biases.size() - 1](7)  = 0.5f;
-    // net.biases[net.biases.size() - 1](8)  = 0.5f;
-    // net.biases[net.biases.size() - 1](9)  = 0.5f;
-    // net.biases[net.biases.size() - 1](10) = 0.5f;
-    // net.biases[net.biases.size() - 1](11) = 0.5f;
+    // net.biases[net.biases.size() - 1](0)  = -0.5f;
+    // net.biases[net.biases.size() - 1](1)  = -0.5f;
+    // net.biases[net.biases.size() - 1](2)  = -0.5f;
+    // net.biases[net.biases.size() - 1](3)  = -0.5f;
+    // net.biases[net.biases.size() - 1](4)  = -0.5f;
+    // net.biases[net.biases.size() - 1](5)  = -0.5f;
+    // net.biases[net.biases.size() - 1](6)  = -0.5f;
+    // net.biases[net.biases.size() - 1](6)  = -0.5f;
+    // net.biases[net.biases.size() - 1](7)  = -0.5f;
+    // net.biases[net.biases.size() - 1](8)  = -0.5f;
+    // net.biases[net.biases.size() - 1](9)  = -0.5f;
+    // net.biases[net.biases.size() - 1](10) = -0.5f;
+    // net.biases[net.biases.size() - 1](11) = -0.5f;
 
     NeuralNet::HyperParameter hy;
     hy.training_data = &train_data;
     hy.test_data     = &test_data;
-    hy.eval_data     = &eval_data;
+    hy.eval_data     = &test_data;
 
     // coarse
-    NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::Extra);
+    NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::General);
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Warn);
-    // NeuralNet::coarse_hyper_surf(net, hy);
+    NeuralNet::coarse_hyper_surf(net, hy);
 
     // fine
-    NeuralNet::Log::set_hyper_level(NeuralNet::LogLevel::Extra);
-    NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Warn);
     hy.max_epochs             = 100;
     hy.learning_schedule_type = NeuralNet::LearningScheduleType::TestAccuracy;
     hy.no_improvement_in      = 10;
-    hy.stop_eta_fraction      = 128;
+    hy.stop_eta_fraction      = 32;
     hy.reset_monitor();
     hy.monitor_test_accuracy = true;
-    // NeuralNet::bounce_hyper_surf(net, hy, 3, 5);
+    NeuralNet::bounce_hyper_surf(net, hy, 3, 4);
 
     // learn
-    hy.max_epochs             = 300;
-    hy.monitor_test_accuracy  = true;
-    hy.monitor_train_accuracy = true;
-    hy.monitor_eval_accuracy  = true;
-    hy.monitor_train_cost     = true;
-    hy.monitor_test_cost      = true;
-    hy.monitor_eval_cost      = true;
+    hy.max_epochs        = 1000;
+    hy.no_improvement_in = 100;
+    hy.stop_eta_fraction = 32;
+    hy.reset_monitor();
+    hy.monitor_test_accuracy = true;
+    // hy.monitor_train_accuracy = true;
+    // hy.monitor_train_cost     = true;
+    // hy.monitor_test_cost      = true;
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
 
-    NeuralNet::sgd(net, hy);
+    // todo: test
+    // hy.mini_batch_size = 30;
+    // hy.init_eta        = 1.69175f;
+    // hy.mu              = 0.166031f;
+    // hy.lambda_l2       = 0.270891f;
 
-    arma::fmat at = {0.9f, 0.05f, 0.05f};
-    arma::fmat a  = at.t();
-    std::cout << feedforward(net, a);
+    // hy.mini_batch_size = 34;
+    // hy.init_eta        = 0.0021759f;
+    // hy.mu              = 0.998901f;
+    // hy.lambda_l2       = 0.000268912f;
+
+    NeuralNet::sgd(net, hy);
+    NeuralNet::save_json(net, "net.json");
+
+    // check result
+    // arma::fmat at = {0.7f, 0.25f, 0.05f};
+    // arma::fmat a  = at.t();
+    // std::cout << feedforward(net, a);
+    // NeuralNet::update_learn_status(net, hy);
 }

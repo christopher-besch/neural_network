@@ -36,7 +36,7 @@ void load_json_network(Network& net, const std::string& json_path) {
         for(unsigned int x = 0; x < w.size(); ++x)
             // loop over rows
             for(unsigned int y = 0; y < w[0].size(); ++y)
-                weight.at(y, x) = w[x][y];
+                weight(y, x) = w[x][y];
         net.weights.push_back(weight);
     }
 

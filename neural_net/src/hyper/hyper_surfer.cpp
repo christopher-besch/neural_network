@@ -42,7 +42,7 @@ inline bool test_train_costs_decrease(Network net, HyperParameter& hy, size_t am
         test(net, hy);
         decreases += strictly_monotone_decrease(hy.train_costs);
     }
-    return decreases / amount;
+    return std::round(decreases / amount);
 }
 
 void coarse_hyper_surf(const Network& net, HyperParameter& hy) {
@@ -85,10 +85,15 @@ void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parame
     // set first delta
     float last_delta = left_delta > right_delta ? left_delta : right_delta;
     bool  go_right   = left_delta > right_delta ? false : true;
-    // go two steps in right direction
     if(left_delta > right_delta) {
+        // go two steps in right direction
         h_parameter /= 100.0f;
         log_hyper_extra("parameter should be smaller than default; has been set to: {}", h_parameter);
+    } else if(left_delta == right_delta) {
+        // go one step in right direction
+        h_parameter /= 10.0f;
+        log_hyper_extra("parameter immediately found: {}", h_parameter);
+        return;
     } else
         log_hyper_extra("parameter should be bigger than default; has been set to: {}", h_parameter);
 
@@ -97,7 +102,7 @@ void default_coarse_surf(const Network& net, HyperParameter& hy, float& h_parame
         h_parameter *= go_right ? 10.0f : 1.0f / 10.0f;
         log_hyper_extra("Changing parameter to {}", h_parameter);
         float new_delta = test_eval_accuracies(net, hy, amount);
-        if(new_delta < last_delta) {
+        if(new_delta <= last_delta) {
             // go one step back
             h_parameter *= go_right ? 1.0f / 10.0f : 10.0f;
             log_hyper_extra("Best coarse value for parameter found: {}", h_parameter);
