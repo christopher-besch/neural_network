@@ -102,47 +102,47 @@ int main(int argc, char* argv[]) {
     create_network(net, {3, 100, 100, 12});
 
     // accuracy only
-    // net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
-    //     // both home and guest goals have to be correct
-    //     return NeuralNet::DefaultEvaluater::classifier(y.rows(0, 5), a.rows(0, 5)) &&
-    //            NeuralNet::DefaultEvaluater::classifier(y.rows(6, 11), a.rows(6, 11));
-    // };
+    net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
+        // both home and guest goals have to be correct
+        return NeuralNet::DefaultEvaluater::classifier(y.rows(0, 5), a.rows(0, 5)) &&
+               NeuralNet::DefaultEvaluater::classifier(y.rows(6, 11), a.rows(6, 11));
+    };
 
     // correct rules
-    net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
-        size_t correct_home;
-        size_t selected_home;
-        NeuralNet::get_highest_index(y.rows(0, 5), a.rows(0, 5), correct_home, selected_home);
-        size_t correct_guest;
-        size_t selected_guest;
-        NeuralNet::get_highest_index(y.rows(6, 11), a.rows(6, 11), correct_guest, selected_guest);
-
-        float score = 0.0f;
-        // everything correct
-        if((correct_home == selected_home) && (correct_guest == selected_guest))
-            score = 4.0f;
-        // correct draw
-        else if((correct_guest == correct_home) && (selected_guest == selected_home))
-            score = 2.0f;
-        // difference correct
-        else if((selected_home - selected_guest) == (correct_home - correct_guest))
-            score = 3.0f;
-        // tendency correct
-        else if((selected_home > selected_guest) == (correct_home > correct_guest))
-            score = 2.0f;
-
-        // todo: test
-        // std::cout << "--------------------------------------------------" << std::endl;
-        // std::cout << correct_home << std::endl;
-        // std::cout << correct_guest << std::endl;
-        // std::cout << std::endl;
-        // std::cout << selected_home << std::endl;
-        // std::cout << selected_guest << std::endl;
-        // std::cout << std::endl;
-        // std::cout << score << std::endl;
-
-        return score;
-    };
+    //     net.evaluator = [](const arma::fvec& y, const arma::fvec& a) {
+    //         size_t correct_home;
+    //         size_t selected_home;
+    //         NeuralNet::get_highest_index(y.rows(0, 5), a.rows(0, 5), correct_home, selected_home);
+    //         size_t correct_guest;
+    //         size_t selected_guest;
+    //         NeuralNet::get_highest_index(y.rows(6, 11), a.rows(6, 11), correct_guest, selected_guest);
+    //
+    //         float score = 0.0f;
+    //         // everything correct
+    //         if((correct_home == selected_home) && (correct_guest == selected_guest))
+    //             score = 4.0f;
+    //         // correct draw
+    //         else if((correct_guest == correct_home) && (selected_guest == selected_home))
+    //             score = 2.0f;
+    //         // difference correct
+    //         else if((selected_home - selected_guest) == (correct_home - correct_guest))
+    //             score = 3.0f;
+    //         // tendency correct
+    //         else if((selected_home > selected_guest) == (correct_home > correct_guest))
+    //             score = 2.0f;
+    //
+    //         // todo: test
+    //         // std::cout << "--------------------------------------------------" << std::endl;
+    //         // std::cout << correct_home << std::endl;
+    //         // std::cout << correct_guest << std::endl;
+    //         // std::cout << std::endl;
+    //         // std::cout << selected_home << std::endl;
+    //         // std::cout << selected_guest << std::endl;
+    //         // std::cout << std::endl;
+    //         // std::cout << score << std::endl;
+    //
+    //         return score;
+    //     };
 
     // direct pass-through
     // net.weights[net.weights.size() - 1](0, 0)   = 1.0f;
@@ -203,18 +203,49 @@ int main(int argc, char* argv[]) {
     NeuralNet::Log::set_learn_level(NeuralNet::LogLevel::Extra);
 
     // todo: test
-    // hy.mini_batch_size = 30;
-    // hy.init_eta        = 1.69175f;
-    // hy.mu              = 0.166031f;
-    // hy.lambda_l2       = 0.270891f;
-
-    // hy.mini_batch_size = 34;
-    // hy.init_eta        = 0.0021759f;
-    // hy.mu              = 0.998901f;
-    // hy.lambda_l2       = 0.000268912f;
+    //     hy.mini_batch_size = 30;
+    //     hy.init_eta        = 1.69175f;
+    //     hy.mu              = 0.166031f;
+    //     hy.lambda_l2       = 0.270891f;
+    //
+    //     hy.mini_batch_size = 34;
+    //     hy.init_eta        = 0.0021759f;
+    //     hy.mu              = 0.998901f;
+    //     hy.lambda_l2       = 0.000268912f;
 
     NeuralNet::sgd(net, hy);
     NeuralNet::save_json(net, "net.json");
+
+    // NeuralNet::load_json_network(net, "net1.json");
+
+    std::ofstream file("table.csv");
+    if(!file)
+        raise_critical("Can't open output csv file!");
+
+    file << "home;guest;guess_home;guess_guest" << std::endl;
+    arma::fmat in = {0.0f, 0.0f, 0.0f};
+    for(size_t home = 0; home <= 100; ++home) {
+        for(size_t guest = 0; guest + home <= 100; ++guest) {
+            size_t draw = 100 - home - guest;
+            if(home + draw + guest != 100) {
+                std::cout << home << " " << draw << " " << guest << std::endl;
+                std::cout << in << std::endl;
+                raise_critical("broken");
+            }
+            in[0]           = home * 0.01f;
+            in[1]           = draw * 0.01f;
+            in[2]           = guest * 0.01f;
+            arma::fmat t_in = in.t();
+            arma::fvec res  = NeuralNet::feedforward(net, t_in);
+            // std::cout << t_in << std::endl;
+            // std::cout << res << std::endl;
+            size_t guess_home, guess_guest;
+            NeuralNet::get_highest_index(res.rows(0, 5), res.rows(0, 5), guess_home, guess_home);
+            NeuralNet::get_highest_index(res.rows(6, 11), res.rows(6, 11), guess_guest, guess_guest);
+            file << home << ";" << guest << ";" << guess_home << ";" << guess_guest << std::endl;
+        }
+    }
+    file.close();
 
     // check result
     // arma::fmat at = {0.7f, 0.25f, 0.05f};

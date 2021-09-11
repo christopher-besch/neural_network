@@ -69,6 +69,11 @@ int main(int argc, const char* argv[]) {
     hy.stop_eta_fraction      = 128;
     NeuralNet::sgd(net, hy);
 
+    print_img(test_data.get_mini_x(50, 1));
+    std::cout << NeuralNet::feedforward(net, test_data.get_mini_x(50, 1)) << std::endl;
+    print_img(test_data.get_mini_x(51, 1));
+    std::cout << NeuralNet::feedforward(net, test_data.get_mini_x(51, 1)) << std::endl;
+
     return 0;
 
     hy.lambda_l1     = 0.0f;
